@@ -32,8 +32,25 @@ export default {
     let response;
     
     try {
+      // Root / welcome
+      if (path === '/' || path === '') {
+        response = new Response(JSON.stringify({ 
+          message: 'FragBase API',
+          version: '1.0.0',
+          status: 'online',
+          endpoints: {
+            health: '/api/status',
+            perfumes: '/api/perfumes',
+            auth: '/api/auth/login',
+            docs: 'https://github.com/mike-warlet/fragbase'
+          }
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
       // Health check
-      if (path === '/api/status') {
+      else if (path === '/api/status') {
         response = new Response(JSON.stringify({ status: 'ok', version: '1.0.0' }), {
           headers: { 'Content-Type': 'application/json' }
         });
