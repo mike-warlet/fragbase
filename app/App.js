@@ -8,10 +8,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './screens/Login';
 import HomeScreen from './screens/Home';
 import SearchScreen from './screens/Search';
+import MessagesScreen from './screens/Messages';
 import ProfileScreen from './screens/Profile';
 import PerfumeDetailScreen from './screens/PerfumeDetail';
 import CreateReviewScreen from './screens/CreateReview';
 import CreatePostScreen from './screens/CreatePost';
+import ChatScreen from './screens/Chat';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,7 +32,8 @@ function MainTabs() {
         component={HomeScreen}
         options={{ 
           title: 'Feed',
-          tabBarLabel: 'Feed'
+          tabBarLabel: 'Feed',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🏠</Text>
         }}
       />
       <Tab.Screen 
@@ -38,7 +41,17 @@ function MainTabs() {
         component={SearchScreen}
         options={{ 
           title: 'Buscar',
-          tabBarLabel: 'Buscar'
+          tabBarLabel: 'Buscar',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🔍</Text>
+        }}
+      />
+      <Tab.Screen 
+        name="Messages" 
+        component={MessagesScreen}
+        options={{ 
+          title: 'Mensagens',
+          tabBarLabel: 'Mensagens',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>💬</Text>
         }}
       />
       <Tab.Screen 
@@ -46,7 +59,8 @@ function MainTabs() {
         component={ProfileScreen}
         options={{ 
           title: 'Perfil',
-          tabBarLabel: 'Perfil'
+          tabBarLabel: 'Perfil',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>👤</Text>
         }}
       />
     </Tab.Navigator>
@@ -75,6 +89,13 @@ function MainStack() {
         name="CreatePost" 
         component={CreatePostScreen}
         options={{ title: 'Novo Post' }}
+      />
+      <Stack.Screen 
+        name="Chat" 
+        component={ChatScreen}
+        options={({ route }) => ({ 
+          title: route.params?.userName || 'Chat'
+        })}
       />
     </Stack.Navigator>
   );

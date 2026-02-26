@@ -4,6 +4,7 @@ import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPer
 import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeReview } from './reviews.js';
 import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections } from './users.js';
 import { handleGetFeed, handleCreatePost, handleDeletePost } from './posts.js';
+import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead } from './messages.js';
 
 // CORS headers
 const corsHeaders = {
@@ -131,6 +132,22 @@ export default {
       else if (path.match(/^\/api\/posts\/([^\/]+)$/) && method === 'DELETE') {
         const postId = path.match(/^\/api\/posts\/([^\/]+)$/)[1];
         response = await handleDeletePost(request, env, postId);
+      }
+      
+      // Messages routes
+      else if (path === '/api/messages/conversations' && method === 'GET') {
+        response = await handleGetConversations(request, env);
+      }
+      else if (path === '/api/messages' && method === 'POST') {
+        response = await handleSendMessage(request, env);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)$/) && method === 'GET') {
+        const otherUserId = path.match(/^\/api\/messages\/([^\/]+)$/)[1];
+        response = await handleGetMessages(request, env, otherUserId);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)\/read$/) && method === 'PUT') {
+        const fromUserId = path.match(/^\/api\/messages\/([^\/]+)\/read$/)[1];
+        response = await handleMarkAsRead(request, env, fromUserId);
       }
       
       // 404
