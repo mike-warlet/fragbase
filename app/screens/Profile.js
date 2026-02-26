@@ -1,111 +1,149 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { apiCall } from '../config';
 
-export default function ProfileScreen({ navigation }) {
+export default function Profile({ navigation }) {
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({ follower_count: 0, following_count: 0, review_count: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchProfile();
+    });
 
-  const loadProfile = async () => {
+    return unsubscribe;
+  }, [navigation]);
+
+  const fetchProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      const userStr = await AsyncStorage.getItem('user');
-      const userData = JSON.parse(userStr);
-
-      // Get full profile with stats
-      const data = await api(`/api/users/${userData.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setUser(data.user);
-      setStats({
-        follower_count: data.user.follower_count || 0,
-        following_count: data.user.following_count || 0,
-        review_count: data.user.review_count || 0,
-      });
+      const data = await apiCall('/api/auth/me');
+      setUser(data);
     } catch (error) {
-      console.error('Error loading profile:', error);
+      Alert.alert('Erro', 'Falha ao carregar perfil');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    navigation.replace('Login');
+    Alert.alert(
+      'Sair',
+      'Deseja fazer logout?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.removeItem('token');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Carregando...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8B4789" />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        {user?.photo_url ? (
-          <Image source={{ uri: user.photo_url }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </Text>
+        <Image
+          source={{ uri: user.avatar_url || 'https://via.placeholder.com/100' }}
+          style={styles.avatar}
+        />
+        <Text style={styles.name}>{user.display_name}</Text>
+        <Text style={styles.username}>@{user.username}</Text>
+        {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
+
+        {/* Stats */}
+        <View style={styles.stats}>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{user.reviews_count || 0}</Text>
+            <Text style={styles.statLabel}>Reviews</Text>
           </View>
-        )}
-        
-        <Text style={styles.name}>{user?.name}</Text>
-        <Text style={styles.username}>@{user?.username}</Text>
-        
-        {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{user.followers_count || 0}</Text>
+            <Text style={styles.statLabel}>Seguidores</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{user.following_count || 0}</Text>
+            <Text style={styles.statLabel}>Seguindo</Text>
+          </View>
+        </View>
+
+        {/* Edit Profile Button */}
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('EditProfile')}
+        >
+          <Text style={styles.editButtonText}>Editar Perfil</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.review_count}</Text>
-          <Text style={styles.statLabel}>Reviews</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.follower_count}</Text>
-          <Text style={styles.statLabel}>Seguidores</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.following_count}</Text>
-          <Text style={styles.statLabel}>Seguindo</Text>
-        </View>
+      {/* Menu */}
+      <View style={styles.menu}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Collections')}
+        >
+          <Text style={styles.menuIcon}>📚</Text>
+          <Text style={styles.menuText}>Minhas Coleções</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
+        >
+          <Text style={styles.menuIcon}>👤</Text>
+          <Text style={styles.menuText}>Ver Perfil Público</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          <Text style={styles.menuIcon}>🚪</Text>
+          <Text style={styles.menuText}>Sair</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.editButton}>
-        <Text style={styles.editButtonText}>Editar Perfil</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Sair</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
-    backgroundColor: 'white',
     alignItems: 'center',
-    paddingVertical: 30,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    padding: 20,
+    backgroundColor: '#F5F5F5',
   },
   avatar: {
     width: 100,
@@ -113,92 +151,78 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 15,
   },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#8b4513',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  avatarText: {
-    fontSize: 40,
-    color: 'white',
-    fontWeight: 'bold',
-  },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
   },
   username: {
-    fontSize: 14,
-    color: '#8b4513',
-    fontWeight: '600',
-    marginBottom: 10,
+    fontSize: 16,
+    color: '#666',
+    marginTop: 4,
   },
   bio: {
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
-    paddingHorizontal: 30,
     marginTop: 10,
+    paddingHorizontal: 20,
   },
-  statsContainer: {
+  stats: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    marginTop: 10,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#DDD',
+    width: '100%',
+    justifyContent: 'space-around',
   },
-  statItem: {
-    flex: 1,
+  stat: {
     alignItems: 'center',
   },
-  statNumber: {
+  statValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#8B4789',
   },
   statLabel: {
     fontSize: 12,
     color: '#666',
-    marginTop: 5,
+    marginTop: 4,
   },
   editButton: {
-    backgroundColor: '#8b4513',
-    marginHorizontal: 20,
+    backgroundColor: '#8B4789',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 20,
     marginTop: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
   },
   editButtonText: {
-    color: 'white',
+    color: '#FFF',
+    fontWeight: '600',
     fontSize: 16,
-    fontWeight: 'bold',
   },
-  logoutButton: {
-    backgroundColor: '#dc3545',
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  loadingText: {
-    textAlign: 'center',
+  menu: {
     marginTop: 20,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  menuIcon: {
+    fontSize: 24,
+    marginRight: 15,
+  },
+  menuText: {
+    flex: 1,
     fontSize: 16,
-    color: '#666',
+    color: '#333',
+  },
+  menuArrow: {
+    fontSize: 24,
+    color: '#CCC',
   },
 });

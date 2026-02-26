@@ -5,6 +5,8 @@ import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeR
 import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections } from './users.js';
 import { handleGetFeed, handleCreatePost, handleDeletePost } from './posts.js';
 import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead } from './messages.js';
+import { handleUploadImage, handleGetImage, handleDeleteImage } from './images.js';
+import { handleGetCollections, handleGetCollection, handleCreateCollection, handleUpdateCollection, handleDeleteCollection, handleAddPerfumeToCollection, handleRemovePerfumeFromCollection } from './collections.js';
 
 // CORS headers
 const corsHeaders = {
@@ -148,6 +150,49 @@ export default {
       else if (path.match(/^\/api\/messages\/([^\/]+)\/read$/) && method === 'PUT') {
         const fromUserId = path.match(/^\/api\/messages\/([^\/]+)\/read$/)[1];
         response = await handleMarkAsRead(request, env, fromUserId);
+      }
+      
+      // Image routes
+      else if (path === '/api/images/upload' && method === 'POST') {
+        response = await handleUploadImage(request, env);
+      }
+      else if (path.match(/^\/images\/(.+)$/) && method === 'GET') {
+        const filename = path.match(/^\/images\/(.+)$/)[1];
+        response = await handleGetImage(request, env, filename);
+      }
+      else if (path.match(/^\/api\/images\/(.+)$/) && method === 'DELETE') {
+        const filename = path.match(/^\/api\/images\/(.+)$/)[1];
+        response = await handleDeleteImage(request, env, filename);
+      }
+      
+      // Collections routes
+      else if (path.match(/^\/api\/users\/([^\/]+)\/collections$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/users\/([^\/]+)\/collections$/)[1];
+        response = await handleGetCollections(request, env, userId);
+      }
+      else if (path === '/api/collections' && method === 'POST') {
+        response = await handleCreateCollection(request, env);
+      }
+      else if (path.match(/^\/api\/collections\/([^\/]+)$/) && method === 'GET') {
+        const collectionId = path.match(/^\/api\/collections\/([^\/]+)$/)[1];
+        response = await handleGetCollection(request, env, collectionId);
+      }
+      else if (path.match(/^\/api\/collections\/([^\/]+)$/) && method === 'PUT') {
+        const collectionId = path.match(/^\/api\/collections\/([^\/]+)$/)[1];
+        response = await handleUpdateCollection(request, env, collectionId);
+      }
+      else if (path.match(/^\/api\/collections\/([^\/]+)$/) && method === 'DELETE') {
+        const collectionId = path.match(/^\/api\/collections\/([^\/]+)$/)[1];
+        response = await handleDeleteCollection(request, env, collectionId);
+      }
+      else if (path.match(/^\/api\/collections\/([^\/]+)\/perfumes$/) && method === 'POST') {
+        const collectionId = path.match(/^\/api\/collections\/([^\/]+)\/perfumes$/)[1];
+        response = await handleAddPerfumeToCollection(request, env, collectionId);
+      }
+      else if (path.match(/^\/api\/collections\/([^\/]+)\/perfumes\/([^\/]+)$/) && method === 'DELETE') {
+        const collectionId = path.match(/^\/api\/collections\/([^\/]+)\/perfumes\/([^\/]+)$/)[1];
+        const perfumeId = path.match(/^\/api\/collections\/([^\/]+)\/perfumes\/([^\/]+)$/)[2];
+        response = await handleRemovePerfumeFromCollection(request, env, collectionId, perfumeId);
       }
       
       // 404

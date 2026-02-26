@@ -14,6 +14,11 @@ import PerfumeDetailScreen from './screens/PerfumeDetail';
 import CreateReviewScreen from './screens/CreateReview';
 import CreatePostScreen from './screens/CreatePost';
 import ChatScreen from './screens/Chat';
+import EditProfileScreen from './screens/EditProfile';
+import UserProfileScreen from './screens/UserProfile';
+import CollectionsScreen from './screens/Collections';
+import CollectionDetailScreen from './screens/CollectionDetail';
+import CreateCollectionScreen from './screens/CreateCollection';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -96,6 +101,31 @@ function MainStack() {
         options={({ route }) => ({ 
           title: route.params?.userName || 'Chat'
         })}
+      />
+      <Stack.Screen 
+        name="EditProfile" 
+        component={EditProfileScreen}
+        options={{ title: 'Editar Perfil' }}
+      />
+      <Stack.Screen 
+        name="UserProfile" 
+        component={UserProfileScreen}
+        options={{ title: 'Perfil do Usuário' }}
+      />
+      <Stack.Screen 
+        name="Collections" 
+        component={CollectionsScreen}
+        options={{ title: 'Coleções' }}
+      />
+      <Stack.Screen 
+        name="CollectionDetail" 
+        component={CollectionDetailScreen}
+        options={{ title: 'Coleção' }}
+      />
+      <Stack.Screen 
+        name="CreateCollection" 
+        component={CreateCollectionScreen}
+        options={{ title: 'Nova Coleção' }}
       />
     </Stack.Navigator>
   );

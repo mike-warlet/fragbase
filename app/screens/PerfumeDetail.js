@@ -6,6 +6,7 @@ import AccordBar from '../components/AccordBar';
 import PyramidNotes from '../components/PyramidNotes';
 import RatingBar from '../components/RatingBar';
 import ReviewCard from '../components/ReviewCard';
+import AddToCollectionModal from '../components/AddToCollectionModal';
 import theme from '../theme';
 
 export default function PerfumeDetailScreen({ route, navigation }) {
@@ -13,6 +14,7 @@ export default function PerfumeDetailScreen({ route, navigation }) {
   const [perfume, setPerfume] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
 
   useEffect(() => {
     loadPerfume();
@@ -216,6 +218,14 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         <Text style={styles.reviewButtonText}>✍️ Escrever Review</Text>
       </TouchableOpacity>
 
+      {/* Add to Collection button */}
+      <TouchableOpacity 
+        style={styles.collectionButton} 
+        onPress={() => setShowCollectionModal(true)}
+      >
+        <Text style={styles.collectionButtonText}>➕ Adicionar à Coleção</Text>
+      </TouchableOpacity>
+
       {/* Reviews */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Reviews ({reviews.length})</Text>
@@ -231,6 +241,14 @@ export default function PerfumeDetailScreen({ route, navigation }) {
           <Text style={styles.emptyText}>Nenhum review ainda. Seja o primeiro!</Text>
         )}
       </View>
+
+      {/* Add to Collection Modal */}
+      <AddToCollectionModal
+        visible={showCollectionModal}
+        onClose={() => setShowCollectionModal(false)}
+        perfumeId={perfumeId}
+        perfumeName={perfume.name}
+      />
     </ScrollView>
   );
 }
@@ -386,7 +404,7 @@ const styles = StyleSheet.create({
   reviewButton: {
     backgroundColor: theme.colors.primary,
     marginHorizontal: theme.spacing.lg,
-    marginVertical: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
@@ -394,6 +412,21 @@ const styles = StyleSheet.create({
   },
   reviewButtonText: {
     color: theme.colors.textPrimary,
+    fontSize: theme.typography.h6,
+    fontWeight: theme.typography.bold,
+  },
+  collectionButton: {
+    backgroundColor: '#FFF',
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center',
+  },
+  collectionButtonText: {
+    color: theme.colors.primary,
     fontSize: theme.typography.h6,
     fontWeight: theme.typography.bold,
   },
