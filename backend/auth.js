@@ -54,35 +54,61 @@ export async function handleRegister(request, env) {
     const { email, password, name } = await request.json();
     
     if (!email || !password || !name) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+      return new Response(JSON.stringify({ error: 'Preencha todos os campos' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
     
-    // Check if user exists
-    const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
-    if (existing) {
-      return new Response(JSON.stringify({ error: 'Email already registered' }), {
+    // Extract username from email input (accepts "maria", "@maria", or "maria@domain")
+    let username = email;
+    if (email.startsWith('@')) {
+      username = email.substring(1);
+    } else if (email.includes('@')) {
+      username = email.split('@')[0];
+    }
+    
+    // Validate username format (only lowercase letters, numbers, underscore, dot)
+    if (!/^[a-z0-9_.]+$/.test(username)) {
+      return new Response(JSON.stringify({ 
+        error: 'Nome de usuário inválido. Use apenas letras minúsculas, números, _ ou .' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Check if username already exists
+    const existingUsername = await env.DB.prepare(
+      'SELECT id FROM users WHERE username = ?'
+    ).bind(username).first();
+    
+    if (existingUsername) {
+      return new Response(JSON.stringify({ 
+        error: `Nome de usuário @${username} já está em uso. Tente outro como @${username}2 ou @${username}_oficial` 
+      }), {
         status: 409,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+    
+    // Generate email from username
+    const emailAddress = `${username}@fragbase.com`;
     
     // Create user
     const userId = crypto.randomUUID();
     const hashedPassword = await hashPassword(password);
     
     await env.DB.prepare(
-      'INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)'
-    ).bind(userId, email, name, hashedPassword).run();
+      'INSERT INTO users (id, username, email, name, password_hash) VALUES (?, ?, ?, ?, ?)'
+    ).bind(userId, username, emailAddress, name, hashedPassword).run();
     
     // Generate token
     const token = await generateToken(userId, env.JWT_SECRET);
     
     return new Response(JSON.stringify({ 
       token, 
-      user: { id: userId, email, name } 
+      user: { id: userId, username, email: emailAddress, name } 
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
@@ -101,30 +127,27 @@ export async function handleLogin(request, env) {
     const { email, password } = await request.json();
     
     if (!email || !password) {
-      return new Response(JSON.stringify({ error: 'Missing email or password' }), {
+      return new Response(JSON.stringify({ error: 'Preencha nome de usuário e senha' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
     
-    // Convert username to email format
-    // Accepts: "maria", "@maria", or "maria@fragbase.com"
-    let emailAddress = email;
-    if (!email.includes('@')) {
-      // Just username: "maria"
-      emailAddress = `${email}@fragbase.com`;
-    } else if (email.startsWith('@')) {
-      // @username format: "@maria"
-      emailAddress = `${email.substring(1)}@fragbase.com`;
+    // Extract username from input (accepts "maria", "@maria", or "maria@fragbase.com")
+    let username = email;
+    if (email.startsWith('@')) {
+      username = email.substring(1);
+    } else if (email.includes('@')) {
+      username = email.split('@')[0];
     }
     
-    // Find user
+    // Find user by username
     const user = await env.DB.prepare(
-      'SELECT id, email, name, password_hash FROM users WHERE email = ?'
-    ).bind(emailAddress).first();
+      'SELECT id, username, email, name, password_hash FROM users WHERE username = ?'
+    ).bind(username).first();
     
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
+      return new Response(JSON.stringify({ error: 'Usuário ou senha incorretos' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -133,7 +156,7 @@ export async function handleLogin(request, env) {
     // Verify password
     const hashedPassword = await hashPassword(password);
     if (hashedPassword !== user.password_hash) {
-      return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
+      return new Response(JSON.stringify({ error: 'Usuário ou senha incorretos' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -144,7 +167,7 @@ export async function handleLogin(request, env) {
     
     return new Response(JSON.stringify({ 
       token, 
-      user: { id: user.id, email: user.email, name: user.name } 
+      user: { id: user.id, username: user.username, email: user.email, name: user.name } 
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -168,7 +191,7 @@ export async function handleGetMe(request, env) {
   
   try {
     const user = await env.DB.prepare(
-      'SELECT id, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
+      'SELECT id, username, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
     ).bind(auth.userId).first();
     
     if (!user) {
