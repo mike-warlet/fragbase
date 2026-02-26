@@ -1,0 +1,23 @@
+name = "fragbase-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "fragbase"
+database_id = "" # Fill this after creating the D1 database
+
+# R2 Bucket for images
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "fragbase-images"
+
+# Environment variables
+[vars]
+# Add JWT_SECRET via: wrangler secret put JWT_SECRET
+
+# Worker settings
+workers_dev = true
+route = ""
+zone_id = ""
