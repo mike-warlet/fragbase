@@ -22,7 +22,10 @@ export default function SearchScreen() {
   };
 
   const renderPerfume = ({ item }) => (
-    <TouchableOpacity style={styles.perfumeCard}>
+    <TouchableOpacity 
+      style={styles.perfumeCard}
+      onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: item.id })}
+    >
       {item.image_url && (
         <Image source={{ uri: item.image_url }} style={styles.perfumeImage} />
       )}

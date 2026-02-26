@@ -3,6 +3,7 @@ import { handleRegister, handleLogin, handleGetMe } from './auth.js';
 import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews } from './perfumes.js';
 import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeReview } from './reviews.js';
 import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections } from './users.js';
+import { handleGetFeed, handleCreatePost, handleDeletePost } from './posts.js';
 
 // CORS headers
 const corsHeaders = {
@@ -101,6 +102,18 @@ export default {
       else if (path.match(/^\/api\/reviews\/([^\/]+)\/like$/) && method === 'POST') {
         const reviewId = path.match(/^\/api\/reviews\/([^\/]+)\/like$/)[1];
         response = await handleLikeReview(request, env, reviewId);
+      }
+      
+      // Posts routes (Feed)
+      else if (path === '/api/posts' && method === 'GET') {
+        response = await handleGetFeed(request, env);
+      }
+      else if (path === '/api/posts' && method === 'POST') {
+        response = await handleCreatePost(request, env);
+      }
+      else if (path.match(/^\/api\/posts\/([^\/]+)$/) && method === 'DELETE') {
+        const postId = path.match(/^\/api\/posts\/([^\/]+)$/)[1];
+        response = await handleDeletePost(request, env, postId);
       }
       
       // 404

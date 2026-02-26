@@ -9,6 +9,9 @@ import LoginScreen from './screens/Login';
 import HomeScreen from './screens/Home';
 import SearchScreen from './screens/Search';
 import ProfileScreen from './screens/Profile';
+import PerfumeDetailScreen from './screens/PerfumeDetail';
+import CreateReviewScreen from './screens/CreateReview';
+import CreatePostScreen from './screens/CreatePost';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -19,24 +22,61 @@ function MainTabs() {
       screenOptions={{
         tabBarActiveTintColor: '#8b4513',
         tabBarInactiveTintColor: '#999',
+        headerShown: true,
       }}
     >
       <Tab.Screen 
         name="Feed" 
         component={HomeScreen}
-        options={{ title: 'Feed' }}
+        options={{ 
+          title: 'Feed',
+          tabBarLabel: 'Feed'
+        }}
       />
       <Tab.Screen 
         name="Search" 
         component={SearchScreen}
-        options={{ title: 'Buscar' }}
+        options={{ 
+          title: 'Buscar',
+          tabBarLabel: 'Buscar'
+        }}
       />
       <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
-        options={{ title: 'Perfil' }}
+        options={{ 
+          title: 'Perfil',
+          tabBarLabel: 'Perfil'
+        }}
       />
     </Tab.Navigator>
+  );
+}
+
+function MainStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="MainTabs" 
+        component={MainTabs}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="PerfumeDetail" 
+        component={PerfumeDetailScreen}
+        options={{ title: 'Detalhes do Perfume' }}
+      />
+      <Stack.Screen 
+        name="CreateReview" 
+        component={CreateReviewScreen}
+        options={{ title: 'Criar Review' }}
+      />
+      <Stack.Screen 
+        name="CreatePost" 
+        component={CreatePostScreen}
+        options={{ title: 'Novo Post' }}
+      />
+    </Stack.Navigator>
   );
 }
 
@@ -69,7 +109,7 @@ export default function App() {
         {!isLoggedIn ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="Main" component={MainStack} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
