@@ -64,7 +64,7 @@ export default function ProfileScreen({ navigation }) {
         )}
         
         <Text style={styles.name}>{user?.name}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
+        <Text style={styles.username}>@{user?.username}</Text>
         
         {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
       </View>
@@ -133,9 +133,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
-  email: {
+  username: {
     fontSize: 14,
-    color: '#666',
+    color: '#8b4513',
+    fontWeight: '600',
     marginBottom: 10,
   },
   bio: {
