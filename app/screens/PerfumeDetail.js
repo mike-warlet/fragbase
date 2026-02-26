@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../config';
+import AccordBar from '../components/AccordBar';
+import PyramidNotes from '../components/PyramidNotes';
+import RatingBar from '../components/RatingBar';
 import ReviewCard from '../components/ReviewCard';
+import theme from '../theme';
 
 export default function PerfumeDetailScreen({ route, navigation }) {
   const { perfumeId } = route.params;
@@ -44,68 +48,135 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Carregando...</Text>
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (!perfume) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.errorText}>Perfume não encontrado</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header with image */}
-      <View style={styles.header}>
+      {/* Hero Image */}
+      <View style={styles.heroContainer}>
         {perfume.image_url ? (
-          <Image source={{ uri: perfume.image_url }} style={styles.image} />
+          <Image source={{ uri: perfume.image_url }} style={styles.heroImage} />
         ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderText}>🌸</Text>
+          <View style={styles.heroPlaceholder}>
+            <Text style={styles.heroEmoji}>🌸</Text>
           </View>
         )}
-        
-        <View style={styles.headerInfo}>
-          <Text style={styles.name}>{perfume.name}</Text>
-          <Text style={styles.brand}>{perfume.brand}</Text>
-          {perfume.year && <Text style={styles.year}>{perfume.year}</Text>}
-          {perfume.type && <Text style={styles.type}>{perfume.type}</Text>}
-        </View>
+        {perfume.gender && (
+          <View style={[styles.genderBadge, { 
+            backgroundColor: theme.getGenderColor(perfume.gender) 
+          }]}>
+            <Text style={styles.genderText}>
+              {perfume.gender === 'masculine' ? 'FOR MEN' : 
+               perfume.gender === 'feminine' ? 'FOR WOMEN' : 'UNISEX'}
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* Stats */}
-      <View style={styles.stats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {perfume.avg_rating > 0 ? perfume.avg_rating.toFixed(1) : '—'}
-          </Text>
-          <Text style={styles.statLabel}>Rating</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{perfume.review_count || 0}</Text>
-          <Text style={styles.statLabel}>Reviews</Text>
-        </View>
+      {/* Header Info */}
+      <View style={styles.headerInfo}>
+        <Text style={styles.brand}>{perfume.brand}</Text>
+        <Text style={styles.name}>{perfume.name}</Text>
+        {perfume.year && (
+          <Text style={styles.year}>{perfume.year}</Text>
+        )}
+        {perfume.perfumer && (
+          <Text style={styles.perfumer}>Por {perfume.perfumer}</Text>
+        )}
       </View>
 
-      {/* Notes */}
-      {(perfume.notes_top || perfume.notes_heart || perfume.notes_base) && (
+      {/* Main Accords */}
+      {perfume.main_accords && perfume.main_accords.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notas</Text>
-          {perfume.notes_top && (
-            <View style={styles.noteRow}>
-              <Text style={styles.noteLabel}>Topo:</Text>
-              <Text style={styles.noteValue}>{perfume.notes_top}</Text>
-            </View>
-          )}
-          {perfume.notes_heart && (
-            <View style={styles.noteRow}>
-              <Text style={styles.noteLabel}>Coração:</Text>
-              <Text style={styles.noteValue}>{perfume.notes_heart}</Text>
-            </View>
-          )}
-          {perfume.notes_base && (
-            <View style={styles.noteRow}>
-              <Text style={styles.noteLabel}>Base:</Text>
-              <Text style={styles.noteValue}>{perfume.notes_base}</Text>
-            </View>
-          )}
+          <Text style={styles.sectionTitle}>Acordes Principais</Text>
+          {perfume.main_accords.slice(0, 8).map((accord, index) => (
+            <AccordBar 
+              key={index}
+              accord={accord.name}
+              strength={accord.strength || 100}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Rating */}
+      {perfume.ratings_breakdown && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Avaliações</Text>
+          <RatingBar 
+            ratings={perfume.ratings_breakdown}
+            total={perfume.votes_count}
+          />
+        </View>
+      )}
+
+      {/* Pyramid Notes */}
+      {perfume.notes && (
+        <PyramidNotes notes={perfume.notes} />
+      )}
+
+      {/* When to Wear */}
+      {perfume.when_to_wear && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quando Usar</Text>
+          <View style={styles.seasonContainer}>
+            {perfume.when_to_wear.winter > 0 && (
+              <View style={styles.seasonItem}>
+                <Text style={styles.seasonEmoji}>❄️</Text>
+                <Text style={styles.seasonText}>Inverno</Text>
+                <Text style={styles.seasonVotes}>{perfume.when_to_wear.winter}</Text>
+              </View>
+            )}
+            {perfume.when_to_wear.spring > 0 && (
+              <View style={styles.seasonItem}>
+                <Text style={styles.seasonEmoji}>🌸</Text>
+                <Text style={styles.seasonText}>Primavera</Text>
+                <Text style={styles.seasonVotes}>{perfume.when_to_wear.spring}</Text>
+              </View>
+            )}
+            {perfume.when_to_wear.summer > 0 && (
+              <View style={styles.seasonItem}>
+                <Text style={styles.seasonEmoji}>☀️</Text>
+                <Text style={styles.seasonText}>Verão</Text>
+                <Text style={styles.seasonVotes}>{perfume.when_to_wear.summer}</Text>
+              </View>
+            )}
+            {perfume.when_to_wear.fall > 0 && (
+              <View style={styles.seasonItem}>
+                <Text style={styles.seasonEmoji}>🍂</Text>
+                <Text style={styles.seasonText}>Outono</Text>
+                <Text style={styles.seasonVotes}>{perfume.when_to_wear.fall}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.dayNightContainer}>
+            {perfume.when_to_wear.day > 0 && (
+              <View style={styles.dayNightItem}>
+                <Text style={styles.seasonEmoji}>☀️</Text>
+                <Text style={styles.seasonText}>Dia</Text>
+                <Text style={styles.seasonVotes}>{perfume.when_to_wear.day}</Text>
+              </View>
+            )}
+            {perfume.when_to_wear.night > 0 && (
+              <View style={styles.dayNightItem}>
+                <Text style={styles.seasonEmoji}>🌙</Text>
+                <Text style={styles.seasonText}>Noite</Text>
+                <Text style={styles.seasonVotes}>{perfume.when_to_wear.night}</Text>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
@@ -114,6 +185,29 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Descrição</Text>
           <Text style={styles.description}>{perfume.description}</Text>
+        </View>
+      )}
+
+      {/* Pros & Cons */}
+      {(perfume.pros || perfume.cons) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>O que as pessoas dizem</Text>
+          {perfume.pros && perfume.pros.length > 0 && (
+            <View style={styles.prosConsContainer}>
+              <Text style={styles.prosTitle}>👍 Prós</Text>
+              {perfume.pros.map((pro, index) => (
+                <Text key={index} style={styles.proText}>• {pro}</Text>
+              ))}
+            </View>
+          )}
+          {perfume.cons && perfume.cons.length > 0 && (
+            <View style={[styles.prosConsContainer, { marginTop: theme.spacing.md }]}>
+              <Text style={styles.consTitle}>👎 Contras</Text>
+              {perfume.cons.map((con, index) => (
+                <Text key={index} style={styles.conText}>• {con}</Text>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -144,130 +238,169 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
   },
-  header: {
-    backgroundColor: 'white',
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  image: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    marginRight: 20,
-  },
-  imagePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    backgroundColor: '#f0e6d6',
+  loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20,
   },
-  placeholderText: {
-    fontSize: 48,
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.typography.body,
+  },
+  heroContainer: {
+    position: 'relative',
+    aspectRatio: 1,
+    backgroundColor: theme.colors.surface,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  heroPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroEmoji: {
+    fontSize: 128,
+  },
+  genderBadge: {
+    position: 'absolute',
+    top: theme.spacing.md,
+    right: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    ...theme.shadows.md,
+  },
+  genderText: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.caption,
+    fontWeight: theme.typography.bold,
   },
   headerInfo: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   brand: {
-    fontSize: 18,
-    color: '#8b4513',
-    fontWeight: '600',
+    fontSize: theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.bold,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  name: {
+    fontSize: theme.typography.h2,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   year: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
   },
-  type: {
-    fontSize: 13,
-    color: '#999',
-  },
-  stats: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    marginTop: 10,
-    paddingVertical: 20,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#8b4513',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+  perfumer: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
   },
   section: {
-    backgroundColor: 'white',
-    marginTop: 10,
-    padding: 20,
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: theme.typography.h5,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.md,
   },
-  noteRow: {
+  seasonContainer: {
     flexDirection: 'row',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
   },
-  noteLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    width: 80,
-  },
-  noteValue: {
+  seasonItem: {
+    alignItems: 'center',
     flex: 1,
-    fontSize: 14,
-    color: '#333',
+  },
+  seasonEmoji: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  seasonText: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  seasonVotes: {
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.textPrimary,
+  },
+  dayNightContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  dayNightItem: {
+    alignItems: 'center',
+    flex: 1,
   },
   description: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
     lineHeight: 22,
   },
+  prosConsContainer: {
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.md,
+  },
+  prosTitle: {
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.success,
+    marginBottom: theme.spacing.sm,
+  },
+  proText: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  consTitle: {
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.error,
+    marginBottom: theme.spacing.sm,
+  },
+  conText: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
   reviewButton: {
-    backgroundColor: '#8b4513',
-    marginHorizontal: 20,
-    marginVertical: 15,
-    paddingVertical: 14,
-    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    marginHorizontal: theme.spacing.lg,
+    marginVertical: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
+    ...theme.shadows.md,
   },
   reviewButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.h6,
+    fontWeight: theme.typography.bold,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#999',
-    fontSize: 14,
-    paddingVertical: 20,
-  },
-  loadingText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.body,
+    paddingVertical: theme.spacing.lg,
   },
 });

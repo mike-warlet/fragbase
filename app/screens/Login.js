@@ -18,6 +18,8 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
+      console.log('Tentando login:', { email, endpoint: isLogin ? 'login' : 'register' });
+      
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin 
         ? { email, password }
@@ -28,6 +30,8 @@ export default function LoginScreen({ navigation }) {
         body: JSON.stringify(body),
       });
 
+      console.log('Login sucesso:', data);
+
       // Save token
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
@@ -35,7 +39,8 @@ export default function LoginScreen({ navigation }) {
       // Navigate to main app
       navigation.replace('Main');
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      console.error('Erro no login:', error);
+      Alert.alert('Erro', error.message || 'Não foi possível fazer login. Verifique sua conexão.');
     } finally {
       setLoading(false);
     }

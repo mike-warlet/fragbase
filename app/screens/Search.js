@@ -1,14 +1,49 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { api } from '../config';
+import PerfumeCard from '../components/PerfumeCard';
+import theme from '../theme';
 
-export default function SearchScreen() {
+export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  useEffect(() => {
+    loadPerfumes();
+  }, []);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (query) {
+        handleSearch();
+      } else if (!initialLoad) {
+        loadPerfumes();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [query]);
+
+  const loadPerfumes = async () => {
+    setLoading(true);
+    try {
+      const data = await api('/api/perfumes?limit=50');
+      setResults(data.perfumes);
+      setInitialLoad(false);
+    } catch (error) {
+      console.error('Load perfumes error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      loadPerfumes();
+      return;
+    }
 
     setLoading(true);
     try {
@@ -22,49 +57,61 @@ export default function SearchScreen() {
   };
 
   const renderPerfume = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.perfumeCard}
+    <PerfumeCard 
+      perfume={item}
       onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: item.id })}
-    >
-      {item.image_url && (
-        <Image source={{ uri: item.image_url }} style={styles.perfumeImage} />
-      )}
-      <View style={styles.perfumeInfo}>
-        <Text style={styles.perfumeName}>{item.name}</Text>
-        <Text style={styles.perfumeBrand}>{item.brand}</Text>
-        {item.year && <Text style={styles.perfumeYear}>{item.year}</Text>}
-      </View>
-    </TouchableOpacity>
+    />
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBar}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar perfumes..."
+          placeholder="Buscar perfumes, marcas..."
+          placeholderTextColor={theme.colors.textTertiary}
           value={query}
           onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchButtonText}>Buscar</Text>
-        </TouchableOpacity>
+        {query.length > 0 && (
+          <Text 
+            style={styles.clearButton}
+            onPress={() => setQuery('')}
+          >
+            ✕
+          </Text>
+        )}
       </View>
 
+      {/* Results */}
       {loading ? (
-        <Text style={styles.loadingText}>Buscando...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Buscando perfumes...</Text>
+        </View>
       ) : (
         <FlatList
           data={results}
           renderItem={renderPerfume}
           keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
-              {query ? 'Nenhum perfume encontrado' : 'Busque por perfumes'}
-            </Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyEmoji}>🌸</Text>
+              <Text style={styles.emptyTitle}>
+                {query ? 'Nenhum perfume encontrado' : 'Nenhum perfume disponível'}
+              </Text>
+              {query && (
+                <Text style={styles.emptyText}>
+                  Tente buscar por outro nome ou marca
+                </Text>
+              )}
+            </View>
           }
         />
       )}
@@ -75,83 +122,70 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
   },
-  searchBar: {
+  searchContainer: {
     flexDirection: 'row',
-    padding: 15,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    margin: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadows.sm,
+  },
+  searchIcon: {
+    fontSize: 20,
+    marginRight: theme.spacing.sm,
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginRight: 10,
+    height: 48,
+    fontSize: theme.typography.body,
+    color: theme.colors.textPrimary,
   },
-  searchButton: {
-    backgroundColor: '#8b4513',
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  searchButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+  clearButton: {
+    fontSize: 20,
+    color: theme.colors.textSecondary,
+    padding: theme.spacing.xs,
   },
   list: {
-    padding: 15,
+    padding: theme.spacing.md,
+    paddingTop: 0,
   },
-  perfumeCard: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  row: {
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
   },
-  perfumeImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 15,
-  },
-  perfumeInfo: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-  },
-  perfumeName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  perfumeBrand: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  perfumeYear: {
-    fontSize: 12,
-    color: '#999',
+    alignItems: 'center',
   },
   loadingText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
+    marginTop: theme.spacing.md,
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxl,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: theme.spacing.md,
+  },
+  emptyTitle: {
+    fontSize: theme.typography.h5,
+    fontWeight: theme.typography.bold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.sm,
   },
   emptyText: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginTop: 40,
-    fontSize: 16,
-    color: '#999',
+    paddingHorizontal: theme.spacing.xl,
   },
 });
