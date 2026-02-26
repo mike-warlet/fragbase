@@ -99,7 +99,18 @@ export async function handleCreatePerfume(request, env) {
     await env.DB.prepare(
       `INSERT INTO perfumes (id, name, brand, year, type, notes_top, notes_heart, notes_base, description, image_url) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(perfumeId, name, brand, year, type, notes_top, notes_heart, notes_base, description, image_url).run();
+    ).bind(
+      perfumeId, 
+      name, 
+      brand, 
+      year || null, 
+      type || null, 
+      notes_top || null, 
+      notes_heart || null, 
+      notes_base || null, 
+      description || null, 
+      image_url || null
+    ).run();
     
     const perfume = await env.DB.prepare('SELECT * FROM perfumes WHERE id = ?').bind(perfumeId).first();
     

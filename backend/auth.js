@@ -38,6 +38,33 @@ export async function requireAuth(request, env) {
   return { userId: decoded.userId };
 }
 
+// Authenticate and return user or null
+export async function authenticate(request, env) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  
+  const token = authHeader.substring(7);
+  const decoded = await verifyToken(token, env.JWT_SECRET);
+  
+  if (!decoded) {
+    return null;
+  }
+  
+  // Get user from database
+  try {
+    const user = await env.DB.prepare(
+      'SELECT id, username, email, name, photo_url, bio FROM users WHERE id = ?'
+    ).bind(decoded.userId).first();
+    
+    return user;
+  } catch (error) {
+    console.error('Authenticate error:', error);
+    return null;
+  }
+}
+
 // Hash password (simple version - in production use bcrypt or similar)
 async function hashPassword(password) {
   const encoder = new TextEncoder();

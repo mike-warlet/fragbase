@@ -34,7 +34,7 @@ export async function handleGetCollection(request, env, collectionId) {
   try {
     // Get collection info
     const collection = await env.DB.prepare(`
-      SELECT c.*, u.username, u.display_name, u.avatar_url
+      SELECT c.*, u.username, u.name, u.photo_url
       FROM collections c
       JOIN users u ON c.user_id = u.id
       WHERE c.id = ?
@@ -51,7 +51,6 @@ export async function handleGetCollection(request, env, collectionId) {
     const perfumes = await env.DB.prepare(`
       SELECT 
         p.*,
-        cp.added_at,
         AVG(r.rating) as avg_rating,
         COUNT(DISTINCT r.id) as review_count
       FROM collections_perfumes cp
@@ -59,7 +58,6 @@ export async function handleGetCollection(request, env, collectionId) {
       LEFT JOIN reviews r ON p.id = r.perfume_id
       WHERE cp.collection_id = ?
       GROUP BY p.id
-      ORDER BY cp.added_at DESC
     `).bind(collectionId).all();
 
     collection.perfumes = perfumes.results;
@@ -71,7 +69,10 @@ export async function handleGetCollection(request, env, collectionId) {
 
   } catch (error) {
     console.error('Get collection error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch collection' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Failed to fetch collection',
+      details: error.message
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -98,11 +99,14 @@ export async function handleCreateCollection(request, env) {
       });
     }
 
-    const result = await env.DB.prepare(`
-      INSERT INTO collections (user_id, name, description, is_public)
-      VALUES (?, ?, ?, ?)
-      RETURNING *
-    `).bind(user.id, name.trim(), description || null, is_public ? 1 : 0).first();
+    const collectionId = crypto.randomUUID();
+
+    await env.DB.prepare(`
+      INSERT INTO collections (id, user_id, name, description, is_public)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(collectionId, user.id, name.trim(), description || null, is_public ? 1 : 0).run();
+
+    const result = await env.DB.prepare('SELECT * FROM collections WHERE id = ?').bind(collectionId).first();
 
     return new Response(JSON.stringify(result), {
       status: 201,
@@ -111,7 +115,10 @@ export async function handleCreateCollection(request, env) {
 
   } catch (error) {
     console.error('Create collection error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to create collection' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Failed to create collection',
+      details: error.message
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
