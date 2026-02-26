@@ -81,7 +81,7 @@ export async function handleCreatePost(request, env) {
     
     await env.DB.prepare(
       'INSERT INTO posts (id, user_id, perfume_id, text, image_url) VALUES (?, ?, ?, ?, ?)'
-    ).bind(postId, auth.userId, perfume_id, text, image_url).run();
+    ).bind(postId, auth.userId, perfume_id || null, text || null, image_url || null).run();
     
     // Get post with user data
     const post = await env.DB.prepare(

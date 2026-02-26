@@ -1,17 +1,18 @@
 name = "fragbase-api"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+account_id = "c8dd4182b1cf4eeebaf5202cc6c20c02"
 
 # D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "fragbase"
-database_id = "" # Fill this after creating the D1 database
+database_id = "d7b6f6e4-f0e9-4f1f-9f9a-edd9be0d0259"
 
-# R2 Bucket for images
-[[r2_buckets]]
-binding = "IMAGES"
-bucket_name = "fragbase-images"
+# R2 Bucket for images (disabled until R2 is enabled on account)
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "fragbase-images"
 
 # Environment variables
 [vars]

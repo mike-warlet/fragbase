@@ -1,5 +1,6 @@
 // API Configuration
-export const API_URL = process.env.API_URL || 'http://localhost:8787';
+// Production URL (deployed on Cloudflare Workers)
+export const API_URL = process.env.API_URL || 'https://fragbase-api.warlet-invest.workers.dev';
 
 // Helper function for API calls
 export async function api(endpoint, options = {}) {
