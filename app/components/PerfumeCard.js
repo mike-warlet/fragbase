@@ -3,6 +3,8 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import theme from '../theme';
 
 export default function PerfumeCard({ perfume, onPress }) {
+  const [imageError, setImageError] = React.useState(false);
+  
   const renderAccordTags = () => {
     if (!perfume.main_accords || perfume.main_accords.length === 0) return null;
     
@@ -46,11 +48,16 @@ export default function PerfumeCard({ perfume, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.imageContainer}>
-        {perfume.image_url ? (
-          <Image source={{ uri: perfume.image_url }} style={styles.image} />
+        {perfume.image_url && !imageError ? (
+          <Image 
+            source={{ uri: perfume.image_url }} 
+            style={styles.image}
+            onError={() => setImageError(true)}
+          />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Text style={styles.placeholderEmoji}>🌸</Text>
+            <Text style={styles.placeholderBrand}>{perfume.brand}</Text>
           </View>
         )}
         {perfume.gender && (
@@ -106,6 +113,12 @@ const styles = StyleSheet.create({
   },
   placeholderEmoji: {
     fontSize: 64,
+    marginBottom: theme.spacing.sm,
+  },
+  placeholderBrand: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
   genderBadge: {
     position: 'absolute',

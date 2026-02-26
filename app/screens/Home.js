@@ -58,7 +58,7 @@ export default function HomeScreen({ navigation }) {
       {item.perfume_name && (
         <TouchableOpacity 
           style={styles.perfumeLink}
-          onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: item.perfume_id })}
+          onPress={() => navigation.getParent()?.navigate('PerfumeDetail', { perfumeId: item.perfume_id })}
         >
           {item.perfume_image && (
             <Image source={{ uri: item.perfume_image }} style={styles.perfumeImage} />
@@ -113,7 +113,7 @@ export default function HomeScreen({ navigation }) {
       {/* Floating action button */}
       <TouchableOpacity 
         style={styles.fab}
-        onPress={() => navigation.navigate('CreatePost')}
+        onPress={() => navigation.getParent()?.navigate('CreatePost')}
       >
         <Text style={styles.fabText}>✏️</Text>
       </TouchableOpacity>

@@ -59,7 +59,10 @@ export default function SearchScreen({ navigation }) {
   const renderPerfume = ({ item }) => (
     <PerfumeCard 
       perfume={item}
-      onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: item.id })}
+      onPress={() => {
+        // Navigate to parent stack navigator
+        navigation.getParent()?.navigate('PerfumeDetail', { perfumeId: item.id });
+      }}
     />
   );
 
