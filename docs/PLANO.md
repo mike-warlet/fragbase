@@ -6,43 +6,46 @@
 
 ## 🎯 Milestones
 
-### FASE 1: Fundação (Semana 1-2) ✅ ATUAL
+### FASE 1: Fundação (Semana 1-2) ✅ COMPLETA
 **Responsável:** Backend + Infraestrutura
 
 - [x] Estrutura do repositório
 - [x] Schema do banco de dados (D1)
 - [x] Skeleton do Worker (Cloudflare)
 - [x] App React Native + Expo inicial
-- [ ] **Rotas de API essenciais implementadas**
-- [ ] **Autenticação funcional (email + social)**
-- [ ] **Deploy inicial do Worker + D1 configurado**
+- [x] **Rotas de API essenciais implementadas**
+- [x] **Autenticação funcional (email)**
+- [ ] **Deploy inicial do Worker + D1 configurado** (próximo)
 
 **Entregas:**
-- API funcional com rotas básicas (auth, users, perfumes, reviews)
-- App com navegação entre telas principais
-- Banco de dados criado no Cloudflare D1
+- ✅ API funcional com rotas básicas (auth, users, perfumes, reviews, posts)
+- ✅ App com navegação entre telas principais
+- ⏳ Banco de dados criado no Cloudflare D1 (aguardando deploy)
 
 ---
 
-### FASE 2: Core Features (Semana 3-4)
+### FASE 2: Core Features (Semana 3-4) 🔄 EM PROGRESSO
 **Responsável:** Frontend + Backend Integration
 
-- [ ] Telas principais implementadas:
-  - Login/Cadastro (email, Google, Apple)
-  - Feed de posts
-  - Perfil de usuário
-  - Detalhes de perfume
-  - Criação de review
-  - Busca de perfumes
-- [ ] CRUD completo de perfumes, reviews, posts
-- [ ] Sistema de follows/likes funcionando
-- [ ] Upload de imagens (R2)
-- [ ] Integração completa app ↔ API
+- [x] Telas principais implementadas:
+  - [x] Login/Cadastro (email)
+  - [x] Feed de posts
+  - [x] Perfil de usuário
+  - [x] Detalhes de perfume
+  - [x] Criação de review
+  - [x] Criação de post
+  - [x] Busca de perfumes
+- [x] CRUD completo de perfumes, reviews, posts (backend)
+- [x] Sistema de follows/likes funcionando (backend)
+- [ ] Upload de imagens (R2) — próximo
+- [x] Integração completa app ↔ API (aguardando deploy para teste)
+- [ ] Autenticação social (Google, Apple) — backlog
 
 **Entregas:**
-- App navegável com fluxo completo de usuário
-- Funcionalidades sociais básicas (follow, like, post)
-- Sistema de reviews operacional
+- ✅ App navegável com fluxo completo de usuário
+- ✅ Funcionalidades sociais básicas (follow, like, post) — backend pronto
+- ✅ Sistema de reviews operacional
+- ⏳ Componentes reutilizáveis (PerfumeCard, ReviewCard)
 
 ---
 
@@ -226,5 +229,5 @@
 
 ---
 
-**Última atualização:** 26/02/2026  
-**Status:** FASE 1 em progresso - Implementando rotas de API
+**Última atualização:** 26/02/2026 - 10:30 AM  
+**Status:** FASE 2 em progresso - Core features implementadas, aguardando deploy para testes
