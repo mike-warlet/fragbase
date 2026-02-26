@@ -107,10 +107,21 @@ export async function handleLogin(request, env) {
       });
     }
     
+    // Convert username to email format
+    // Accepts: "maria", "@maria", or "maria@fragbase.com"
+    let emailAddress = email;
+    if (!email.includes('@')) {
+      // Just username: "maria"
+      emailAddress = `${email}@fragbase.com`;
+    } else if (email.startsWith('@')) {
+      // @username format: "@maria"
+      emailAddress = `${email.substring(1)}@fragbase.com`;
+    }
+    
     // Find user
     const user = await env.DB.prepare(
       'SELECT id, email, name, password_hash FROM users WHERE email = ?'
-    ).bind(email).first();
+    ).bind(emailAddress).first();
     
     if (!user) {
       return new Response(JSON.stringify({ error: 'Invalid credentials' }), {

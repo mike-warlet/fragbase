@@ -4,26 +4,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../config';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
-    if (!email || !password || (!isLogin && !name)) {
+    if (!username || !password || (!isLogin && !name)) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
     setLoading(true);
     try {
-      console.log('Tentando login:', { email, endpoint: isLogin ? 'login' : 'register' });
+      console.log('Tentando login:', { username, endpoint: isLogin ? 'login' : 'register' });
       
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      
+      // Send username as "email" field (backend converts it)
       const body = isLogin 
-        ? { email, password }
-        : { email, password, name };
+        ? { email: username, password }
+        : { email: username, password, name };
 
       const data = await api(endpoint, {
         method: 'POST',
@@ -63,11 +65,11 @@ export default function LoginScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        placeholder={isLogin ? "Nome de usuário (ex: maria)" : "Escolha um nome de usuário"}
+        value={username}
+        onChangeText={setUsername}
         autoCapitalize="none"
+        autoCorrect={false}
       />
 
       <TextInput
