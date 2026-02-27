@@ -12,10 +12,10 @@ const INTENSITY_LABELS = {
 
 const INTENSITY_COLORS = {
   '-1': theme.colors.textTertiary,
-  '0': '#5a5a80',
-  '1': '#7a7aa0',
-  '2': '#a0a0d0',
-  '3': '#d0d0ff',
+  '0': theme.colors.surfaceLight,
+  '1': theme.colors.textSecondary,
+  '2': theme.colors.primaryLight,
+  '3': theme.colors.primary,
 };
 
 export default function NoteVoting({ notes, userVotes, onVote }) {

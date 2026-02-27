@@ -73,7 +73,7 @@ export default function UserProfile({ route, navigation }) {
     );
   }
 
-  const isOwnProfile = currentUserId === parseInt(userId);
+  const isOwnProfile = currentUserId && String(currentUserId) === String(userId);
 
   return (
     <ScrollView style={styles.container}>

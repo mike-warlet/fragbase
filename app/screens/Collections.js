@@ -23,9 +23,10 @@ export default function Collections({ navigation }) {
   const fetchData = async () => {
     try {
       const me = await apiCall('/api/auth/me');
+      if (!me?.id) return;
       setUserId(me.id);
       const data = await apiCall(`/api/users/${me.id}/collections`);
-      setCollections(data);
+      setCollections(Array.isArray(data) ? data : data?.collections || []);
     } catch (error) {
       Alert.alert('Erro', 'Falha ao carregar coleções');
     } finally {

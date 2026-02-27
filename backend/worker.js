@@ -1,19 +1,16 @@
 // Cloudflare Worker - FragBase API
 import { handleRegister, handleLogin, handleGetMe } from './auth.js';
-import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews } from './perfumes.js';
+import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews, handleGetTrendingPerfumes } from './perfumes.js';
 import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeReview } from './reviews.js';
-import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections, handleGetFollowers, handleGetFollowing, handleGetNotifications } from './users.js';
+import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections, handleGetFollowers, handleGetFollowing, handleGetNotifications, handleGetTasteProfile } from './users.js';
 import { handleGetFeed, handleCreatePost, handleDeletePost, handleLikePost, handleGetComments, handleCreateComment, handleDeleteComment } from './posts.js';
-import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead } from './messages.js';
+import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead, handleGetNewMessages, handleTypingIndicator, handleGetChatStatus, handleMessageReaction, handleRemoveReaction } from './messages.js';
 import { handleUploadImage, handleGetImage, handleDeleteImage } from './images.js';
 import { handleGetCollections, handleGetCollection, handleCreateCollection, handleUpdateCollection, handleDeleteCollection, handleAddPerfumeToCollection, handleRemovePerfumeFromCollection } from './collections.js';
 import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVotes,
          handlePerformanceVote, handleGetPerformanceVotes, handleSeasonVote, handleGetSeasonVotes,
          handleGetSimilarPerfumes, handleAddToWishlist, handleRemoveFromWishlist,
          handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
-import { handleGetNewMessages, handleTypingIndicator, handleGetChatStatus, handleMessageReaction, handleRemoveReaction } from './messages.js';
-import { handleGetTrendingPerfumes } from './perfumes.js';
-import { handleGetTasteProfile } from './users.js';
 import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory } from './sotd.js';
 
 // CORS headers
