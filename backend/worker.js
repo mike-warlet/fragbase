@@ -13,6 +13,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
          handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
 import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory, handleGetDiaryCalendar, handleGetDiaryStats } from './sotd.js';
 import { handleGlobalSearch } from './search.js';
+import { handleGetChallenges, handleGetChallenge, handleSubmitEntry, handleVoteEntry, handleGetUserBadges } from './challenges.js';
 import { handleGetLayeringSuggestions, handleCreateLayeringSuggestion, handleVoteLayeringCombo, handleGetTopLayeringCombos } from './layering.js';
 
 // CORS headers
@@ -136,6 +137,27 @@ export default {
       // Global search
       else if (path === '/api/search' && method === 'GET') {
         response = await handleGlobalSearch(request, env);
+      }
+
+      // Challenge routes
+      else if (path === '/api/challenges' && method === 'GET') {
+        response = await handleGetChallenges(request, env);
+      }
+      else if (path.match(/^\/api\/challenges\/([^\/]+)\/entries\/([^\/]+)\/vote$/) && method === 'POST') {
+        const entryId = path.match(/^\/api\/challenges\/([^\/]+)\/entries\/([^\/]+)\/vote$/)[2];
+        response = await handleVoteEntry(request, env, entryId);
+      }
+      else if (path.match(/^\/api\/challenges\/([^\/]+)\/enter$/) && method === 'POST') {
+        const challengeId = path.match(/^\/api\/challenges\/([^\/]+)\/enter$/)[1];
+        response = await handleSubmitEntry(request, env, challengeId);
+      }
+      else if (path.match(/^\/api\/challenges\/([^\/]+)$/) && method === 'GET') {
+        const challengeId = path.match(/^\/api\/challenges\/([^\/]+)$/)[1];
+        response = await handleGetChallenge(request, env, challengeId);
+      }
+      else if (path.match(/^\/api\/users\/([^\/]+)\/badges$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/users\/([^\/]+)\/badges$/)[1];
+        response = await handleGetUserBadges(request, env, userId);
       }
 
       // Layering routes

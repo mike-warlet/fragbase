@@ -29,6 +29,8 @@ import NotificationsScreen from './screens/Notifications';
 import SOTDPickerScreen from './screens/SOTDPicker';
 import CompareScreen from './screens/Compare';
 import FragranceDiaryScreen from './screens/FragranceDiary';
+import ChallengesScreen from './screens/Challenges';
+import ChallengeDetailScreen from './screens/ChallengeDetail';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -195,6 +197,16 @@ function MainStack() {
         name="FragranceDiary"
         component={FragranceDiaryScreen}
         options={{ title: 'Diario de Fragancias' }}
+      />
+      <Stack.Screen
+        name="Challenges"
+        component={ChallengesScreen}
+        options={{ title: 'Desafios' }}
+      />
+      <Stack.Screen
+        name="ChallengeDetail"
+        component={ChallengeDetailScreen}
+        options={{ title: 'Desafio' }}
       />
     </Stack.Navigator>
   );
