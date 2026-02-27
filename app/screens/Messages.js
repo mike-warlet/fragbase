@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, RefreshControl } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { apiCall } from '../config';
 import theme from '../theme';
 
 export default function MessagesScreen({ navigation }) {
@@ -24,11 +23,8 @@ export default function MessagesScreen({ navigation }) {
     if (!silent) setLoading(true);
     
     try {
-      const token = await AsyncStorage.getItem('token');
-      const data = await api('/api/messages/conversations', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setConversations(data.conversations);
+      const data = await apiCall('/api/messages/conversations');
+      setConversations(data.conversations || []);
     } catch (error) {
       console.error('Error loading conversations:', error);
     } finally {

@@ -1,20 +1,21 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { apiCall } from '../config';
+import { useAuth } from '../AuthContext';
 import MessageBubble from '../components/MessageBubble';
 import TypingIndicator from '../components/TypingIndicator';
 import OnlineIndicator from '../components/OnlineIndicator';
 import theme from '../theme';
 
 export default function ChatScreen({ route, navigation }) {
-  const { userId, userName, userPhoto } = route.params;
+  const { userId, userName, userPhoto } = route.params || {};
+  const { user } = useAuth();
+  const currentUserId = user?.id;
   const [messages, setMessages] = useState([]);
   const [reactions, setReactions] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const flatListRef = useRef(null);
@@ -23,7 +24,6 @@ export default function ChatScreen({ route, navigation }) {
   const pollIntervalRef = useRef(1000);
 
   useEffect(() => {
-    loadCurrentUser();
     loadMessages();
 
     // Set header with online indicator
@@ -35,7 +35,7 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       ),
     });
-  }, [isOnline]);
+  }, [userName]);
 
   // Adaptive polling
   useEffect(() => {
@@ -64,19 +64,10 @@ export default function ChatScreen({ route, navigation }) {
     };
   }, [currentUserId]);
 
-  const loadCurrentUser = async () => {
-    const userStr = await AsyncStorage.getItem('user');
-    const user = JSON.parse(userStr);
-    setCurrentUserId(user.id);
-  };
-
   const loadMessages = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      const data = await api(`/api/messages/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setMessages(data.messages);
+      const data = await apiCall(`/api/messages/${userId}`);
+      setMessages(data.messages || []);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -89,15 +80,12 @@ export default function ChatScreen({ route, navigation }) {
     if (!currentUserId || messages.length === 0) return;
 
     try {
-      const token = await AsyncStorage.getItem('token');
       const lastMsg = messages[messages.length - 1];
       const since = lastMsg?.created_at || '1970-01-01';
 
-      const data = await api(`/api/messages/${userId}/new?since=${encodeURIComponent(since)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/messages/${userId}/new?since=${encodeURIComponent(since)}`);
 
-      if (data.messages.length > 0) {
+      if (data.messages?.length > 0) {
         setMessages(prev => {
           // Filter out temp messages that now have real IDs
           const realIds = new Set(data.messages.map(m => m.id));
@@ -115,10 +103,7 @@ export default function ChatScreen({ route, navigation }) {
   const pollStatus = async () => {
     if (!currentUserId) return;
     try {
-      const token = await AsyncStorage.getItem('token');
-      const data = await api(`/api/messages/${userId}/status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/messages/${userId}/status`);
       setIsTyping(data.is_typing);
       setIsOnline(data.is_online);
     } catch (error) {
@@ -132,10 +117,8 @@ export default function ChatScreen({ route, navigation }) {
     lastTypingSentRef.current = now;
 
     try {
-      const token = await AsyncStorage.getItem('token');
-      await api(`/api/messages/${userId}/typing`, {
+      await apiCall(`/api/messages/${userId}/typing`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
       });
     } catch (error) {
       // Silent fail
@@ -171,10 +154,8 @@ export default function ChatScreen({ route, navigation }) {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
     try {
-      const token = await AsyncStorage.getItem('token');
-      const data = await api('/api/messages', {
+      const data = await apiCall('/api/messages', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ to_user_id: userId, text: messageText }),
       });
 
@@ -195,10 +176,8 @@ export default function ChatScreen({ route, navigation }) {
 
   const handleReact = async (messageId, emoji) => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      await api(`/api/messages/${messageId}/react`, {
+      await apiCall(`/api/messages/${messageId}/react`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ emoji }),
       });
       // Optimistic reaction update

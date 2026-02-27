@@ -30,7 +30,7 @@ export default function SearchScreen({ navigation }) {
     setLoading(true);
     try {
       const data = await api('/api/perfumes?limit=50');
-      setResults(data.perfumes);
+      setResults(data.perfumes || []);
       setInitialLoad(false);
     } catch (error) {
       console.error('Load perfumes error:', error);
@@ -48,7 +48,7 @@ export default function SearchScreen({ navigation }) {
     setLoading(true);
     try {
       const data = await api(`/api/perfumes?q=${encodeURIComponent(query)}`);
-      setResults(data.perfumes);
+      setResults(data.perfumes || []);
     } catch (error) {
       console.error('Search error:', error);
     } finally {

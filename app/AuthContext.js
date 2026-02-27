@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from './config';
+import { api, apiCall } from './config';
 
 const AuthContext = createContext(null);
 
@@ -26,8 +26,15 @@ export function AuthProvider({ children }) {
       const storedToken = await AsyncStorage.getItem('token');
       const storedUser = await AsyncStorage.getItem('user');
       if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        try {
+          const parsed = JSON.parse(storedUser);
+          setToken(storedToken);
+          setUser(parsed);
+        } catch (parseError) {
+          // Corrupted stored user data - clear session
+          await AsyncStorage.removeItem('token');
+          await AsyncStorage.removeItem('user');
+        }
       }
     } catch (error) {
       console.error('Error restoring session:', error);
@@ -41,6 +48,9 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    if (!data.token || !data.user) {
+      throw new Error('Resposta inválida do servidor');
+    }
     await AsyncStorage.setItem('token', data.token);
     await AsyncStorage.setItem('user', JSON.stringify(data.user));
     setToken(data.token);
@@ -53,6 +63,9 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     });
+    if (!data.token || !data.user) {
+      throw new Error('Resposta inválida do servidor');
+    }
     await AsyncStorage.setItem('token', data.token);
     await AsyncStorage.setItem('user', JSON.stringify(data.user));
     setToken(data.token);
@@ -70,11 +83,12 @@ export function AuthProvider({ children }) {
   const refreshUser = async () => {
     if (!token) return;
     try {
-      const data = await api('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUser(data.user || data);
-      await AsyncStorage.setItem('user', JSON.stringify(data.user || data));
+      const data = await apiCall('/api/auth/me');
+      const userData = data.user || data;
+      if (userData) {
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+      }
     } catch (error) {
       console.error('Error refreshing user:', error);
     }
