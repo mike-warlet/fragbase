@@ -23,7 +23,7 @@ MVP em desenvolvimento ativo.
 
 - **Account ID:** `c8dd4182b1cf4eeebaf5202cc6c20c02`
 - **Account email:** `warlet.invest@gmail.com`
-- **API Token:** `-CzMYx_vE5EBm-F3sEpYEnf3HnDRlqHuByctiHaG`
+- **API Token:** `Einh3NbZgO9jL3WdlvndReNCcfHnyCgxqqBZHizg`
 - **Worker name:** `fragbase-api`
 - **Worker URL:** `https://fragbase-api.warlet-invest.workers.dev`
 - **D1 database name:** `fragbase`

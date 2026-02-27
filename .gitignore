@@ -52,6 +52,9 @@ web-build/
 # macOS
 .DS_Store
 
+# Project credentials
+CLAUDE.md
+
 # Local database
 *.db
 *.sqlite
