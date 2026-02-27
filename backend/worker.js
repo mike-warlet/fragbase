@@ -11,7 +11,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
          handlePerformanceVote, handleGetPerformanceVotes, handleSeasonVote, handleGetSeasonVotes,
          handleGetSimilarPerfumes, handleAddToWishlist, handleRemoveFromWishlist,
          handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
-import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory } from './sotd.js';
+import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory, handleGetDiaryCalendar, handleGetDiaryStats } from './sotd.js';
 import { handleGlobalSearch } from './search.js';
 
 // CORS headers
@@ -116,6 +116,12 @@ export default {
       }
       else if (path === '/api/sotd/feed' && method === 'GET') {
         response = await handleGetSOTDFeed(request, env);
+      }
+      else if (path === '/api/diary/calendar' && method === 'GET') {
+        response = await handleGetDiaryCalendar(request, env);
+      }
+      else if (path === '/api/diary/stats' && method === 'GET') {
+        response = await handleGetDiaryStats(request, env);
       }
       else if (path.match(/^\/api\/sotd\/([^\/]+)\/history$/) && method === 'GET') {
         const userId = path.match(/^\/api\/sotd\/([^\/]+)\/history$/)[1];

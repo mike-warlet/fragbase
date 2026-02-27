@@ -12,7 +12,7 @@ export async function handleSetSOTD(request, env) {
   }
 
   try {
-    const { perfume_id, note } = await request.json();
+    const { perfume_id, note, occasion, mood, weather } = await request.json();
 
     if (!perfume_id) {
       return new Response(JSON.stringify({ error: 'perfume_id is required' }), {
@@ -36,10 +36,11 @@ export async function handleSetSOTD(request, env) {
 
     // Upsert SOTD for today (replace if already set)
     await env.DB.prepare(
-      `INSERT INTO sotd (id, user_id, perfume_id, note, date)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(user_id, date) DO UPDATE SET perfume_id = ?, note = ?`
-    ).bind(sotdId, auth.userId, perfume_id, note || null, today, perfume_id, note || null).run();
+      `INSERT INTO sotd (id, user_id, perfume_id, note, date, occasion, mood, weather)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id, date) DO UPDATE SET perfume_id = ?, note = ?, occasion = ?, mood = ?, weather = ?`
+    ).bind(sotdId, auth.userId, perfume_id, note || null, today, occasion || null, mood || null, weather || null,
+           perfume_id, note || null, occasion || null, mood || null, weather || null).run();
 
     // Also create a post of type 'sotd'
     const postId = crypto.randomUUID();
@@ -162,6 +163,128 @@ export async function handleGetSOTDHistory(request, env, userId) {
     ).bind(userId, limit).all();
 
     return new Response(JSON.stringify({ history: results }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Get diary calendar entries for a month
+export async function handleGetDiaryCalendar(request, env) {
+  const auth = await requireAuth(request, env);
+  if (auth.error) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const url = new URL(request.url);
+    const year = parseInt(url.searchParams.get('year') || new Date().getFullYear());
+    const month = parseInt(url.searchParams.get('month') || (new Date().getMonth() + 1));
+
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+
+    const { results } = await env.DB.prepare(
+      `SELECT s.*, p.name as perfume_name, p.brand as perfume_brand,
+              p.image_url as perfume_image
+       FROM sotd s
+       JOIN perfumes p ON s.perfume_id = p.id
+       WHERE s.user_id = ? AND s.date >= ? AND s.date <= ?
+       ORDER BY s.date ASC`
+    ).bind(auth.userId, startDate, endDate).all();
+
+    return new Response(JSON.stringify({ entries: results, year, month }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Get diary wear stats
+export async function handleGetDiaryStats(request, env) {
+  const auth = await requireAuth(request, env);
+  if (auth.error) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const [mostWornResult, totalDaysResult, occasionResult, moodResult, weatherResult, streakResult] = await env.DB.batch([
+      // Most worn perfumes
+      env.DB.prepare(
+        `SELECT p.id, p.name, p.brand, p.image_url, COUNT(*) as wear_count
+         FROM sotd s JOIN perfumes p ON s.perfume_id = p.id
+         WHERE s.user_id = ?
+         GROUP BY s.perfume_id
+         ORDER BY wear_count DESC LIMIT 10`
+      ).bind(auth.userId),
+      // Total days logged
+      env.DB.prepare(
+        'SELECT COUNT(*) as total_days FROM sotd WHERE user_id = ?'
+      ).bind(auth.userId),
+      // Occasion breakdown
+      env.DB.prepare(
+        `SELECT occasion, COUNT(*) as count FROM sotd
+         WHERE user_id = ? AND occasion IS NOT NULL
+         GROUP BY occasion ORDER BY count DESC`
+      ).bind(auth.userId),
+      // Mood breakdown
+      env.DB.prepare(
+        `SELECT mood, COUNT(*) as count FROM sotd
+         WHERE user_id = ? AND mood IS NOT NULL
+         GROUP BY mood ORDER BY count DESC`
+      ).bind(auth.userId),
+      // Weather breakdown
+      env.DB.prepare(
+        `SELECT weather, COUNT(*) as count FROM sotd
+         WHERE user_id = ? AND weather IS NOT NULL
+         GROUP BY weather ORDER BY count DESC`
+      ).bind(auth.userId),
+      // Current streak
+      env.DB.prepare(
+        `SELECT date FROM sotd WHERE user_id = ? ORDER BY date DESC LIMIT 60`
+      ).bind(auth.userId),
+    ]);
+
+    // Calculate streak
+    let streak = 0;
+    const dates = streakResult.results.map(r => r.date);
+    if (dates.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      let checkDate = today;
+      for (const date of dates) {
+        if (date === checkDate) {
+          streak++;
+          const d = new Date(checkDate);
+          d.setDate(d.getDate() - 1);
+          checkDate = d.toISOString().split('T')[0];
+        } else {
+          break;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({
+      most_worn: mostWornResult.results,
+      total_days: totalDaysResult.results[0]?.total_days || 0,
+      streak,
+      occasions: occasionResult.results,
+      moods: moodResult.results,
+      weather: weatherResult.results,
+    }), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {

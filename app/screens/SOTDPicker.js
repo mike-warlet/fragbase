@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Image, TextInput, ActivityIndicator, Alert,
+  Image, TextInput, ActivityIndicator, Alert, ScrollView,
 } from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
@@ -14,6 +14,9 @@ export default function SOTDPickerScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const [selectedPerfume, setSelectedPerfume] = useState(null);
   const [note, setNote] = useState('');
+  const [occasion, setOccasion] = useState(null);
+  const [mood, setMood] = useState(null);
+  const [weather, setWeather] = useState(null);
   const [mode, setMode] = useState('collection'); // 'collection' | 'search'
 
   useEffect(() => {
@@ -60,6 +63,9 @@ export default function SOTDPickerScreen({ navigation }) {
         body: JSON.stringify({
           perfume_id: selectedPerfume.perfume_id || selectedPerfume.id,
           note: note.trim() || undefined,
+          occasion: occasion || undefined,
+          mood: mood || undefined,
+          weather: weather || undefined,
         }),
       });
       Alert.alert('SOTD Definido!', `${selectedPerfume.perfume_name || selectedPerfume.name} é o teu perfume do dia.`, [
@@ -174,9 +180,60 @@ export default function SOTDPickerScreen({ navigation }) {
         }
       />
 
-      {/* Note input + Submit */}
+      {/* Note input + Tags + Submit */}
       {selectedPerfume && (
         <View style={styles.bottomBar}>
+          {/* Occasion tags */}
+          <View style={styles.tagSection}>
+            <Text style={styles.tagLabel}>Ocasiao</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tagRow}>
+                {['Trabalho', 'Casual', 'Encontro', 'Festa', 'Esporte', 'Formal'].map((o) => (
+                  <TouchableOpacity
+                    key={o}
+                    style={[styles.tag, occasion === o && styles.tagSelected]}
+                    onPress={() => setOccasion(occasion === o ? null : o)}
+                  >
+                    <Text style={[styles.tagText, occasion === o && styles.tagTextSelected]}>{o}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+          {/* Mood tags */}
+          <View style={styles.tagSection}>
+            <Text style={styles.tagLabel}>Humor</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tagRow}>
+                {['Confiante', 'Relaxado', 'Romantico', 'Energetico', 'Misterioso', 'Alegre'].map((m) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[styles.tag, mood === m && styles.tagSelected]}
+                    onPress={() => setMood(mood === m ? null : m)}
+                  >
+                    <Text style={[styles.tagText, mood === m && styles.tagTextSelected]}>{m}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+          {/* Weather tags */}
+          <View style={styles.tagSection}>
+            <Text style={styles.tagLabel}>Clima</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tagRow}>
+                {['Quente', 'Frio', 'Ameno', 'Chuvoso', 'Umido', 'Seco'].map((w) => (
+                  <TouchableOpacity
+                    key={w}
+                    style={[styles.tag, weather === w && styles.tagSelected]}
+                    onPress={() => setWeather(weather === w ? null : w)}
+                  >
+                    <Text style={[styles.tagText, weather === w && styles.tagTextSelected]}>{w}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
           <TextInput
             style={styles.noteInput}
             placeholder="Nota opcional (ex: perfeito para hoje!)"
@@ -354,5 +411,36 @@ const styles = StyleSheet.create({
     fontSize: typography.body + 1,
     fontWeight: typography.bold,
     color: colors.textPrimary,
+  },
+  tagSection: {
+    marginBottom: spacing.xs,
+  },
+  tagLabel: {
+    fontSize: typography.small,
+    color: colors.textTertiary,
+    marginBottom: 4,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  tag: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.round,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tagSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tagText: {
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+  },
+  tagTextSelected: {
+    color: colors.textPrimary,
+    fontWeight: typography.semibold,
   },
 });
