@@ -27,6 +27,7 @@ import WishlistScreen from './screens/Wishlist';
 import AddFragranceScreen from './screens/AddFragrance';
 import NotificationsScreen from './screens/Notifications';
 import SOTDPickerScreen from './screens/SOTDPicker';
+import CompareScreen from './screens/Compare';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -183,6 +184,11 @@ function MainStack() {
         name="SOTDPicker"
         component={SOTDPickerScreen}
         options={{ title: 'Perfume do Dia' }}
+      />
+      <Stack.Screen
+        name="Compare"
+        component={CompareScreen}
+        options={{ title: 'Comparar Perfumes' }}
       />
     </Stack.Navigator>
   );

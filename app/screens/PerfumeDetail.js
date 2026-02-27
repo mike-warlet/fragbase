@@ -307,6 +307,12 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         >
           <Text style={styles.collectionButtonText}>Adicionar a Colecao</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.collectionButton}
+          onPress={() => navigation.navigate('Compare', { perfumeIds: [perfumeId] })}
+        >
+          <Text style={styles.collectionButtonText}>Comparar</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 11. Reviews */}

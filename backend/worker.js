@@ -1,6 +1,6 @@
 // Cloudflare Worker - FragBase API
 import { handleRegister, handleLogin, handleGetMe } from './auth.js';
-import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews, handleGetTrendingPerfumes } from './perfumes.js';
+import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews, handleGetTrendingPerfumes, handleComparePerfumes } from './perfumes.js';
 import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeReview } from './reviews.js';
 import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections, handleGetFollowers, handleGetFollowing, handleGetNotifications, handleGetTasteProfile } from './users.js';
 import { handleGetFeed, handleCreatePost, handleDeletePost, handleLikePost, handleGetComments, handleCreateComment, handleDeleteComment } from './posts.js';
@@ -132,6 +132,9 @@ export default {
       }
 
       // Perfumes routes
+      else if (path === '/api/perfumes/compare' && method === 'GET') {
+        response = await handleComparePerfumes(request, env);
+      }
       else if (path === '/api/perfumes/trending' && method === 'GET') {
         response = await handleGetTrendingPerfumes(request, env);
       }

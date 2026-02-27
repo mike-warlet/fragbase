@@ -193,6 +193,93 @@ export async function handleCreatePerfume(request, env) {
   }
 }
 
+// Compare multiple perfumes side by side
+export async function handleComparePerfumes(request, env) {
+  try {
+    const url = new URL(request.url);
+    const idsParam = url.searchParams.get('ids') || '';
+    const ids = idsParam.split(',').map(id => id.trim()).filter(Boolean);
+
+    if (ids.length < 2 || ids.length > 4) {
+      return new Response(JSON.stringify({ error: 'Provide 2-4 perfume IDs separated by commas' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const perfumes = [];
+
+    for (const perfumeId of ids) {
+      const [perfumeResult, statsResult, accordsResult, performanceResult, seasonsResult, wishlistResult] = await env.DB.batch([
+        env.DB.prepare('SELECT * FROM perfumes WHERE id = ?').bind(perfumeId),
+        env.DB.prepare(
+          'SELECT COUNT(*) as count, ROUND(AVG(rating), 1) as avg_rating FROM reviews WHERE perfume_id = ?'
+        ).bind(perfumeId),
+        env.DB.prepare(
+          `SELECT accord_name, ROUND(AVG(strength), 1) as avg_strength, COUNT(*) as vote_count
+           FROM accord_votes WHERE perfume_id = ?
+           GROUP BY accord_name ORDER BY avg_strength DESC`
+        ).bind(perfumeId),
+        env.DB.prepare(
+          `SELECT ROUND(AVG(longevity), 1) as avg_longevity, ROUND(AVG(sillage), 1) as avg_sillage,
+                  COUNT(*) as vote_count
+           FROM performance_votes WHERE perfume_id = ?`
+        ).bind(perfumeId),
+        env.DB.prepare(
+          `SELECT SUM(spring) as spring, SUM(summer) as summer, SUM(fall) as fall,
+                  SUM(winter) as winter, SUM(day) as day, SUM(night) as night, COUNT(*) as total
+           FROM season_votes WHERE perfume_id = ?`
+        ).bind(perfumeId),
+        env.DB.prepare(
+          'SELECT list_type, COUNT(*) as count FROM wishlists WHERE perfume_id = ? GROUP BY list_type'
+        ).bind(perfumeId),
+      ]);
+
+      const perfume = perfumeResult.results[0];
+      if (!perfume) continue;
+
+      const stats = statsResult.results[0];
+      const wishlistCounts = { own: 0, want: 0, tried: 0 };
+      for (const row of wishlistResult.results) {
+        wishlistCounts[row.list_type] = row.count;
+      }
+
+      const parseNotes = (str) => str ? str.split(',').map(n => n.trim()).filter(Boolean) : [];
+
+      perfumes.push({
+        ...perfume,
+        notes: {
+          top: parseNotes(perfume.notes_top),
+          heart: parseNotes(perfume.notes_heart),
+          base: parseNotes(perfume.notes_base),
+        },
+        review_count: stats?.count || 0,
+        avg_rating: stats?.avg_rating || 0,
+        accords: accordsResult.results || [],
+        performance: performanceResult.results[0] || null,
+        seasons: seasonsResult.results[0] || null,
+        wishlist_counts: wishlistCounts,
+      });
+    }
+
+    if (perfumes.length < 2) {
+      return new Response(JSON.stringify({ error: 'At least 2 valid perfumes required for comparison' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify({ perfumes }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 // Get perfume reviews
 export async function handleGetPerfumeReviews(request, env, perfumeId) {
   try {
