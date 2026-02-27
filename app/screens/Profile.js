@@ -8,10 +8,12 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiCall } from '../config';
+import { useAuth } from '../AuthContext';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
 export default function Profile({ navigation }) {
+  const { logout, user: authUser } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,14 +21,13 @@ export default function Profile({ navigation }) {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchProfile();
     });
-
     return unsubscribe;
   }, [navigation]);
 
   const fetchProfile = async () => {
     try {
       const data = await apiCall('/api/auth/me');
-      setUser(data);
+      setUser(data.user || data);
     } catch (error) {
       Alert.alert('Erro', 'Falha ao carregar perfil');
     } finally {
@@ -34,7 +35,7 @@ export default function Profile({ navigation }) {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert(
       'Sair',
       'Deseja fazer logout?',
@@ -43,13 +44,7 @@ export default function Profile({ navigation }) {
         {
           text: 'Sair',
           style: 'destructive',
-          onPress: async () => {
-            await AsyncStorage.removeItem('token');
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          },
+          onPress: logout,
         },
       ]
     );
@@ -58,7 +53,18 @@ export default function Profile({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B4789" />
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Nao foi possivel carregar o perfil</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchProfile}>
+          <Text style={styles.retryText}>Tentar novamente</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -71,7 +77,7 @@ export default function Profile({ navigation }) {
           source={{ uri: user.avatar_url || 'https://via.placeholder.com/100' }}
           style={styles.avatar}
         />
-        <Text style={styles.name}>{user.display_name}</Text>
+        <Text style={styles.name}>{user.display_name || user.name}</Text>
         <Text style={styles.username}>@{user.username}</Text>
         {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
 
@@ -107,7 +113,7 @@ export default function Profile({ navigation }) {
           onPress={() => navigation.navigate('Collections')}
         >
           <Text style={styles.menuIcon}>📚</Text>
-          <Text style={styles.menuText}>Minhas Coleções</Text>
+          <Text style={styles.menuText}>Minhas Colecoes</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
@@ -116,13 +122,13 @@ export default function Profile({ navigation }) {
           onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
         >
           <Text style={styles.menuIcon}>👤</Text>
-          <Text style={styles.menuText}>Ver Perfil Público</Text>
+          <Text style={styles.menuText}>Ver Perfil Publico</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
           <Text style={styles.menuIcon}>🚪</Text>
-          <Text style={styles.menuText}>Sair</Text>
+          <Text style={[styles.menuText, { color: colors.error }]}>Sair</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
       </View>
@@ -133,47 +139,65 @@ export default function Profile({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  errorText: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+  },
+  retryText: {
+    color: colors.textPrimary,
+    fontWeight: typography.semibold,
   },
   header: {
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#F5F5F5',
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 15,
+    marginBottom: spacing.md,
+    borderWidth: 3,
+    borderColor: colors.primary,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: typography.h3,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
   },
   username: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.h6,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   bio: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.body,
+    color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 10,
-    paddingHorizontal: 20,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
   stats: {
     flexDirection: 'row',
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#DDD',
+    borderTopColor: colors.border,
     width: '100%',
     justifyContent: 'space-around',
   },
@@ -181,48 +205,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8B4789',
+    fontSize: typography.h4,
+    fontWeight: typography.bold,
+    color: colors.primary,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   editButton: {
-    backgroundColor: '#8B4789',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 20,
-    marginTop: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.round,
+    marginTop: spacing.lg,
   },
   editButtonText: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: typography.semibold,
+    fontSize: typography.h6,
   },
   menu: {
-    marginTop: 20,
+    marginTop: spacing.md,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   menuIcon: {
     fontSize: 24,
-    marginRight: 15,
+    marginRight: spacing.md,
   },
   menuText: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    fontSize: typography.h6,
+    color: colors.textPrimary,
   },
   menuArrow: {
     fontSize: 24,
-    color: '#CCC',
+    color: colors.textTertiary,
   },
 });
