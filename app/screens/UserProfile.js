@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius } from '../theme';
 import ReviewCard from '../components/ReviewCard';
 
 export default function UserProfile({ route, navigation }) {
@@ -67,7 +68,7 @@ export default function UserProfile({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B4789" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -110,7 +111,7 @@ export default function UserProfile({ route, navigation }) {
             disabled={followLoading}
           >
             {followLoading ? (
-              <ActivityIndicator color={isFollowing ? '#8B4789' : '#FFF'} />
+              <ActivityIndicator color={isFollowing ? colors.primary : colors.textPrimary} />
             ) : (
               <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
                 {isFollowing ? 'Seguindo' : 'Seguir'}
@@ -169,47 +170,48 @@ export default function UserProfile({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   header: {
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#F5F5F5',
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 15,
+    marginBottom: spacing.md,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: typography.h3,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
   },
   username: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.h6,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   bio: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.body,
+    color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 10,
-    paddingHorizontal: 20,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
   stats: {
     flexDirection: 'row',
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#DDD',
+    borderTopColor: colors.border,
     width: '100%',
     justifyContent: 'space-around',
   },
@@ -217,65 +219,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8B4789',
+    fontSize: typography.h4,
+    fontWeight: typography.bold,
+    color: colors.primary,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   followButton: {
-    backgroundColor: '#8B4789',
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 20,
-    marginTop: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.xl + 8,
+    borderRadius: borderRadius.round,
+    marginTop: spacing.lg,
   },
   followingButton: {
-    backgroundColor: '#FFF',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#8B4789',
+    borderColor: colors.primary,
   },
   followButtonText: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: typography.semibold,
+    fontSize: typography.h6,
   },
   followingButtonText: {
-    color: '#8B4789',
+    color: colors.primary,
   },
   section: {
-    padding: 20,
+    padding: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   collectionCard: {
-    backgroundColor: '#F9F9F9',
-    padding: 15,
-    borderRadius: 8,
-    marginRight: 10,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.sm,
     width: 150,
   },
   collectionName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.h6,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
   },
   collectionCount: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 5,
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: typography.body,
+    color: colors.textTertiary,
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: spacing.lg,
   },
 });
