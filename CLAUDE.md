@@ -61,6 +61,7 @@ fragbase/
 │   │   ├── SeasonVoting.js      # Season voting
 │   │   ├── SimilarPerfumes.js   # Similar perfumes list
 │   │   ├── WishlistButtons.js   # Own/Want/Tried buttons
+│   │   ├── LayeringSuggestions.js # Layering combo suggestions
 │   │   ├── MessageBubble.js     # Chat message bubble
 │   │   ├── TypingIndicator.js   # Chat typing indicator
 │   │   └── OnlineIndicator.js   # Online status dot
@@ -82,7 +83,9 @@ fragbase/
 │       ├── Wishlist.js      # Want/Tried lists (tabs)
 │       ├── AddFragrance.js  # Search + create perfume
 │       ├── Notifications.js # Follow, like, comment notifications
-│       ├── SOTDPicker.js    # Selecionar perfume do dia
+│       ├── SOTDPicker.js    # Selecionar perfume do dia (+ mood/occasion/weather)
+│       ├── FragranceDiary.js # Calendar view + wear stats
+│       ├── Compare.js       # Side-by-side perfume comparison
 │       └── Chat.js          # Chat individual (reactions, typing)
 ├── backend/                # Cloudflare Worker
 │   ├── worker.js           # Router principal (ESM module)
@@ -94,7 +97,8 @@ fragbase/
 │   ├── collections.js      # CRUD collections
 │   ├── messages.js         # CRUD messages + typing + reactions
 │   ├── voting.js           # Accords, notes, performance, season voting + wishlists
-│   ├── sotd.js             # Scent of the Day endpoints
+│   ├── sotd.js             # Scent of the Day + Diary endpoints
+│   ├── layering.js         # Layering suggestions + voting
 │   ├── search.js           # Busca global + avançada
 │   ├── images.js           # Upload/serve/delete via R2
 │   ├── wrangler.toml       # Config do Worker
@@ -103,15 +107,17 @@ fragbase/
 │       ├── 003-post-likes-and-comments.sql
 │       ├── 004-voting-tables.sql
 │       ├── 005-seed-perfumes.sql  # 50 perfumes seed data
-│       └── 006-sotd.sql           # SOTD table + posts type column
+│       ├── 006-sotd.sql           # SOTD table + posts type column
+│       ├── 007-diary-fields.sql   # Add occasion/mood/weather to SOTD
+│       └── 008-layering.sql       # Layering combos + votes tables
 └── FRAGBASE-PLANO.md       # Roadmap completo
 ```
 
 ## Tabelas D1
 
-users, perfumes, reviews, posts, likes, follows, collections, collections_perfumes, messages, post_likes, comments, perfume_accords, accord_votes, note_votes, performance_votes, season_votes, wishlists, typing_status, message_reactions, sotd
+users, perfumes, reviews, posts, likes, follows, collections, collections_perfumes, messages, post_likes, comments, perfume_accords, accord_votes, note_votes, performance_votes, season_votes, wishlists, typing_status, message_reactions, sotd, layering_combos, layering_votes
 
-## API Endpoints (~60 rotas)
+## API Endpoints (~70 rotas)
 
 ### Auth
 - `POST /api/auth/register` — Cadastro
@@ -136,8 +142,10 @@ users, perfumes, reviews, posts, likes, follows, collections, collections_perfum
 - `POST /api/perfumes` — Criar
 - `GET /api/perfumes/:id/reviews` — Reviews
 - `GET /api/perfumes/trending` — Trending
+- `GET /api/perfumes/compare?ids=id1,id2` — Comparar 2-4 perfumes
 - `GET /api/perfumes/:id/similar` — Similares
 - `GET /api/perfumes/:id/wishlist-status` — Status wishlist
+- `GET /api/perfumes/:id/layering` — Layering suggestions
 
 ### Voting
 - `POST /api/perfumes/:id/notes/vote` — Votar nota
@@ -164,11 +172,18 @@ users, perfumes, reviews, posts, likes, follows, collections, collections_perfum
 - `POST /api/posts/:id/comments` — Comentar
 - `DELETE /api/comments/:id` — Deletar comentário
 
-### SOTD
-- `POST /api/sotd` — Definir perfume do dia
+### SOTD & Diary
+- `POST /api/sotd` — Definir perfume do dia (+ occasion/mood/weather)
 - `GET /api/sotd/me` — Meu SOTD de hoje
 - `GET /api/sotd/feed` — SOTD feed (seguidos)
 - `GET /api/sotd/:userId/history` — Histórico SOTD
+- `GET /api/diary/calendar?year=&month=` — Calendar entries
+- `GET /api/diary/stats` — Wear stats (most worn, streak, patterns)
+
+### Layering
+- `GET /api/layering` — Top layering combos (global)
+- `POST /api/layering` — Sugerir combo
+- `POST /api/layering/:id/vote` — Votar combo (1/-1 toggle)
 
 ### Wishlists
 - `POST /api/wishlists` — Adicionar (own/want/tried)
@@ -222,7 +237,8 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
 - **Sprint 2:** Coleção & Reviews — COMPLETO
 - **Sprint 3:** Social (feed, likes, comments, notificações) — COMPLETO
 - **Sprint 4:** Data & Polish (seed, SOTD, Expo config, EAS) — COMPLETO
-- **Sprint 5:** Launch Prep — EM PROGRESSO
+- **Sprint 5:** Launch Prep (audit, bug fixes) — COMPLETO
+- **Sprint 6:** New Features (comparison, diary, layering) — COMPLETO
 
 ### Deploy realizado em 27/02/2026:
 - Worker deployed com endpoints da FASE 2
@@ -233,7 +249,7 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
 
 ## Próximos Passos
 
-1. **Redeploy backend** com todas as novas rotas e migrations (003-006)
+1. **Redeploy backend** com todas as novas rotas e migrations (003-008)
 2. Push para GitHub
 3. Testes em dispositivos reais
 4. Criar assets reais (icon, splash) — substituir placeholders
@@ -241,6 +257,8 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
 6. WebSocket via Durable Objects para messaging real-time
 7. Push notifications (Expo Push)
 8. Ingestão de mais dados de perfumes (500+ para MVP)
+9. Advanced Discovery Engine (scent quiz, recommendations)
+10. Gamification system (badges, levels, achievements)
 
 ## Notas Importantes
 
@@ -252,3 +270,4 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
 
 ---
 *Última atualização: 27/02/2026*
+*Sprint 6 completado: Comparison Tool, Fragrance Diary, Layering Suggestions*
