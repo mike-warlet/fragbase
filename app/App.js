@@ -21,6 +21,9 @@ import UserProfileScreen from './screens/UserProfile';
 import CollectionsScreen from './screens/Collections';
 import CollectionDetailScreen from './screens/CollectionDetail';
 import CreateCollectionScreen from './screens/CreateCollection';
+import MyCollectionScreen from './screens/MyCollection';
+import WishlistScreen from './screens/Wishlist';
+import AddFragranceScreen from './screens/AddFragrance';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -70,6 +73,15 @@ function MainTabs() {
           title: 'Buscar',
           tabBarLabel: 'Buscar',
           tabBarIcon: () => <Text style={{ fontSize: 24 }}>🔍</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="MyCollection"
+        component={MyCollectionScreen}
+        options={{
+          title: 'Coleção',
+          tabBarLabel: 'Coleção',
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>📦</Text>,
         }}
       />
       <Tab.Screen
@@ -148,6 +160,16 @@ function MainStack() {
         name="CreateCollection"
         component={CreateCollectionScreen}
         options={{ title: 'Nova Colecao' }}
+      />
+      <Stack.Screen
+        name="Wishlist"
+        component={WishlistScreen}
+        options={{ title: 'Wishlist' }}
+      />
+      <Stack.Screen
+        name="AddFragrance"
+        component={AddFragranceScreen}
+        options={{ title: 'Adicionar Perfume' }}
       />
     </Stack.Navigator>
   );
