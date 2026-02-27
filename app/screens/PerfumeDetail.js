@@ -10,6 +10,7 @@ import WishlistButtons from '../components/WishlistButtons';
 import SimilarPerfumes from '../components/SimilarPerfumes';
 import ReviewCard from '../components/ReviewCard';
 import AddToCollectionModal from '../components/AddToCollectionModal';
+import LayeringSuggestions from '../components/LayeringSuggestions';
 import theme from '../theme';
 
 export default function PerfumeDetailScreen({ route, navigation }) {
@@ -290,7 +291,14 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* 10. Similar Perfumes */}
+      {/* 10. Layering Suggestions */}
+      <LayeringSuggestions
+        perfumeId={perfumeId}
+        perfumeName={perfume.name}
+        navigation={navigation}
+      />
+
+      {/* 11. Similar Perfumes */}
       <SimilarPerfumes
         perfumes={similarPerfumes}
         onPress={(id) => navigation.push('PerfumeDetail', { perfumeId: id })}

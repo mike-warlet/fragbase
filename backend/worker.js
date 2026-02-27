@@ -13,6 +13,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
          handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
 import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory, handleGetDiaryCalendar, handleGetDiaryStats } from './sotd.js';
 import { handleGlobalSearch } from './search.js';
+import { handleGetLayeringSuggestions, handleCreateLayeringSuggestion, handleVoteLayeringCombo, handleGetTopLayeringCombos } from './layering.js';
 
 // CORS headers
 const corsHeaders = {
@@ -135,6 +136,22 @@ export default {
       // Global search
       else if (path === '/api/search' && method === 'GET') {
         response = await handleGlobalSearch(request, env);
+      }
+
+      // Layering routes
+      else if (path === '/api/layering' && method === 'GET') {
+        response = await handleGetTopLayeringCombos(request, env);
+      }
+      else if (path === '/api/layering' && method === 'POST') {
+        response = await handleCreateLayeringSuggestion(request, env);
+      }
+      else if (path.match(/^\/api\/layering\/([^\/]+)\/vote$/) && method === 'POST') {
+        const comboId = path.match(/^\/api\/layering\/([^\/]+)\/vote$/)[1];
+        response = await handleVoteLayeringCombo(request, env, comboId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/layering$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/layering$/)[1];
+        response = await handleGetLayeringSuggestions(request, env, perfumeId);
       }
 
       // Perfumes routes
