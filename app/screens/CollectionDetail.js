@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius } from '../theme';
 import PerfumeCard from '../components/PerfumeCard';
 
 export default function CollectionDetail({ route, navigation }) {
@@ -44,7 +45,7 @@ export default function CollectionDetail({ route, navigation }) {
             try {
               await apiCall(
                 `/api/collections/${collectionId}/perfumes/${perfumeId}`,
-                'DELETE'
+                { method: 'DELETE' }
               );
               fetchCollection(); // Refresh
               Alert.alert('Sucesso', 'Perfume removido da coleção');
@@ -68,7 +69,7 @@ export default function CollectionDetail({ route, navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await apiCall(`/api/collections/${collectionId}`, 'DELETE');
+              await apiCall(`/api/collections/${collectionId}`, { method: 'DELETE' });
               navigation.goBack();
               Alert.alert('Sucesso', 'Coleção excluída');
             } catch (error) {
@@ -83,7 +84,7 @@ export default function CollectionDetail({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B4789" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -161,27 +162,29 @@ export default function CollectionDetail({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   errorText: {
-    fontSize: 16,
-    color: '#999',
+    fontSize: typography.h6,
+    color: colors.textTertiary,
   },
   header: {
-    padding: 20,
-    backgroundColor: '#F5F5F5',
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#DDD',
+    borderBottomColor: colors.border,
   },
   headerTop: {
     flexDirection: 'row',
@@ -195,69 +198,69 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   collectionName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginRight: 10,
+    fontSize: typography.h2 - 6,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
+    marginRight: spacing.sm,
   },
   privateBadge: {
-    backgroundColor: '#FFE5B4',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
   privateBadgeText: {
-    fontSize: 11,
-    color: '#8B6914',
+    fontSize: typography.small + 1,
+    color: colors.warning,
   },
   deleteButton: {
     fontSize: 24,
-    padding: 5,
+    padding: spacing.xs,
   },
   description: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
   perfumeCount: {
-    fontSize: 12,
-    color: '#8B4789',
-    fontWeight: '600',
-    marginTop: 8,
+    fontSize: typography.caption,
+    color: colors.primary,
+    fontWeight: typography.semibold,
+    marginTop: spacing.sm,
   },
   perfumeItem: {
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   removeButton: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(255, 0, 0, 0.8)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: colors.error,
+    paddingHorizontal: spacing.md - 4,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.md - 2,
   },
   removeButtonText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    fontSize: typography.caption,
+    fontWeight: typography.semibold,
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 40,
+    padding: spacing.xl + 8,
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 18,
-    color: '#999',
-    marginBottom: 10,
+    fontSize: typography.h5,
+    color: colors.textTertiary,
+    marginBottom: spacing.sm,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#BBB',
+    fontSize: typography.body,
+    color: colors.textTertiary,
     textAlign: 'center',
   },
 });

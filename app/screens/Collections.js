@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
 export default function Collections({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ export default function Collections({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B4789" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -99,91 +100,88 @@ export default function Collections({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   collectionCard: {
-    backgroundColor: '#F9F9F9',
-    padding: 15,
-    marginHorizontal: 15,
-    marginVertical: 8,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     borderLeftWidth: 4,
-    borderLeftColor: '#8B4789',
+    borderLeftColor: colors.primary,
   },
   collectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: spacing.xs,
   },
   collectionName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
     flex: 1,
   },
   privateBadge: {
-    backgroundColor: '#FFE5B4',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
   privateBadgeText: {
-    fontSize: 11,
-    color: '#8B6914',
+    fontSize: typography.small + 1,
+    color: colors.warning,
   },
   collectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   collectionCount: {
-    fontSize: 12,
-    color: '#8B4789',
-    fontWeight: '600',
+    fontSize: typography.caption,
+    color: colors.primary,
+    fontWeight: typography.semibold,
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 40,
+    padding: spacing.xl + 8,
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 18,
-    color: '#999',
-    marginBottom: 10,
+    fontSize: typography.h5,
+    color: colors.textTertiary,
+    marginBottom: spacing.sm,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#BBB',
+    fontSize: typography.body,
+    color: colors.textTertiary,
     textAlign: 'center',
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
-    backgroundColor: '#8B4789',
+    right: spacing.lg,
+    bottom: spacing.lg,
+    backgroundColor: colors.primary,
     width: 60,
     height: 60,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    ...shadows.lg,
   },
   fabIcon: {
-    color: '#FFF',
+    color: colors.textPrimary,
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: typography.bold,
   },
 });

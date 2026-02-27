@@ -10,6 +10,7 @@ import {
   Switch,
 } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
 export default function CreateCollection({ navigation, route }) {
   const [name, setName] = useState('');
@@ -28,10 +29,13 @@ export default function CreateCollection({ navigation, route }) {
     setLoading(true);
 
     try {
-      await apiCall('/api/collections', 'POST', {
-        name: name.trim(),
-        description: description.trim() || null,
-        is_public: isPublic,
+      await apiCall('/api/collections', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || null,
+          is_public: isPublic,
+        }),
       });
 
       Alert.alert('Sucesso', 'Coleção criada!');
@@ -54,6 +58,7 @@ export default function CreateCollection({ navigation, route }) {
         value={name}
         onChangeText={setName}
         placeholder="Ex: Favoritos de Inverno"
+        placeholderTextColor={colors.textTertiary}
         maxLength={100}
       />
 
@@ -63,6 +68,7 @@ export default function CreateCollection({ navigation, route }) {
         value={description}
         onChangeText={setDescription}
         placeholder="Descreva sua coleção..."
+        placeholderTextColor={colors.textTertiary}
         multiline
         numberOfLines={4}
         maxLength={500}
@@ -73,8 +79,8 @@ export default function CreateCollection({ navigation, route }) {
         <Switch
           value={isPublic}
           onValueChange={setIsPublic}
-          trackColor={{ false: '#CCC', true: '#8B4789' }}
-          thumbColor="#FFF"
+          trackColor={{ false: colors.surfaceLight, true: colors.primary }}
+          thumbColor={colors.textPrimary}
         />
       </View>
       <Text style={styles.hint}>
@@ -108,22 +114,24 @@ export default function CreateCollection({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
-    padding: 20,
+    backgroundColor: colors.background,
+    padding: spacing.lg,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    marginTop: 15,
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md - 4,
+    fontSize: typography.h6,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceLight,
   },
   textArea: {
     height: 100,
@@ -133,35 +141,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 15,
+    marginTop: spacing.md,
   },
   hint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+    fontSize: typography.caption,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
   },
   createButton: {
-    backgroundColor: '#8B4789',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
-    marginTop: 25,
+    marginTop: spacing.lg,
   },
   createButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    fontSize: typography.h6,
+    fontWeight: typography.semibold,
   },
   disabledButton: {
     opacity: 0.6,
   },
   cancelButton: {
-    padding: 15,
+    padding: spacing.md,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: spacing.sm,
   },
   cancelButtonText: {
-    color: '#8B4789',
-    fontSize: 16,
+    color: colors.primaryLight,
+    fontSize: typography.h6,
   },
 });
