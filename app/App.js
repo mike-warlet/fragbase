@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
+import { Text, ActivityIndicator, View, StatusBar } from 'react-native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthProvider, useAuth } from './AuthContext';
+import { colors } from './theme';
 
 // Screens
 import LoginScreen from './screens/Login';
@@ -23,49 +25,69 @@ import CreateCollectionScreen from './screens/CreateCollection';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const navTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.surface,
+    text: colors.textPrimary,
+    border: colors.border,
+  },
+};
+
+const screenOptions = {
+  headerStyle: { backgroundColor: colors.surface },
+  headerTintColor: colors.textPrimary,
+  headerTitleStyle: { fontWeight: '600' },
+};
+
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#8b4513',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         headerShown: true,
+        ...screenOptions,
       }}
     >
-      <Tab.Screen 
-        name="Feed" 
+      <Tab.Screen
+        name="Feed"
         component={HomeScreen}
-        options={{ 
+        options={{
           title: 'Feed',
           tabBarLabel: 'Feed',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🏠</Text>
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏠</Text>,
         }}
       />
-      <Tab.Screen 
-        name="Search" 
+      <Tab.Screen
+        name="Search"
         component={SearchScreen}
-        options={{ 
+        options={{
           title: 'Buscar',
           tabBarLabel: 'Buscar',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🔍</Text>
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🔍</Text>,
         }}
       />
-      <Tab.Screen 
-        name="Messages" 
+      <Tab.Screen
+        name="Messages"
         component={MessagesScreen}
-        options={{ 
+        options={{
           title: 'Mensagens',
           tabBarLabel: 'Mensagens',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>💬</Text>
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>💬</Text>,
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
-        options={{ 
+        options={{
           title: 'Perfil',
           tabBarLabel: 'Perfil',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>👤</Text>
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text>,
         }}
       />
     </Tab.Navigator>
@@ -74,88 +96,77 @@ function MainTabs() {
 
 function MainStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen 
-        name="MainTabs" 
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen
+        name="MainTabs"
         component={MainTabs}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="PerfumeDetail" 
+      <Stack.Screen
+        name="PerfumeDetail"
         component={PerfumeDetailScreen}
         options={{ title: 'Detalhes do Perfume' }}
       />
-      <Stack.Screen 
-        name="CreateReview" 
+      <Stack.Screen
+        name="CreateReview"
         component={CreateReviewScreen}
         options={{ title: 'Criar Review' }}
       />
-      <Stack.Screen 
-        name="CreatePost" 
+      <Stack.Screen
+        name="CreatePost"
         component={CreatePostScreen}
         options={{ title: 'Novo Post' }}
       />
-      <Stack.Screen 
-        name="Chat" 
+      <Stack.Screen
+        name="Chat"
         component={ChatScreen}
-        options={({ route }) => ({ 
-          title: route.params?.userName || 'Chat'
+        options={({ route }) => ({
+          title: route.params?.userName || 'Chat',
         })}
       />
-      <Stack.Screen 
-        name="EditProfile" 
+      <Stack.Screen
+        name="EditProfile"
         component={EditProfileScreen}
         options={{ title: 'Editar Perfil' }}
       />
-      <Stack.Screen 
-        name="UserProfile" 
+      <Stack.Screen
+        name="UserProfile"
         component={UserProfileScreen}
-        options={{ title: 'Perfil do Usuário' }}
+        options={{ title: 'Perfil do Utilizador' }}
       />
-      <Stack.Screen 
-        name="Collections" 
+      <Stack.Screen
+        name="Collections"
         component={CollectionsScreen}
-        options={{ title: 'Coleções' }}
+        options={{ title: 'Colecoes' }}
       />
-      <Stack.Screen 
-        name="CollectionDetail" 
+      <Stack.Screen
+        name="CollectionDetail"
         component={CollectionDetailScreen}
-        options={{ title: 'Coleção' }}
+        options={{ title: 'Colecao' }}
       />
-      <Stack.Screen 
-        name="CreateCollection" 
+      <Stack.Screen
+        name="CreateCollection"
         component={CreateCollectionScreen}
-        options={{ title: 'Nova Coleção' }}
+        options={{ title: 'Nova Colecao' }}
       />
     </Stack.Navigator>
   );
 }
 
-export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      setIsLoggedIn(!!token);
-    } catch (error) {
-      console.error('Error checking auth:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+function AppNavigator() {
+  const { isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) {
-    return null; // TODO: Add splash screen
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -164,5 +175,13 @@ export default function App() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppNavigator />
+    </AuthProvider>
   );
 }
