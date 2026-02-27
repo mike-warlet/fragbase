@@ -10,7 +10,7 @@ import {
   FlatList,
   Alert,
 } from 'react-native';
-import { apiCall, getAuthToken } from '../config';
+import { apiCall } from '../config';
 import ReviewCard from '../components/ReviewCard';
 
 export default function UserProfile({ route, navigation }) {
@@ -51,7 +51,7 @@ export default function UserProfile({ route, navigation }) {
   const handleFollow = async () => {
     setFollowLoading(true);
     try {
-      await apiCall(`/api/users/${userId}/follow`, isFollowing ? 'DELETE' : 'POST');
+      await apiCall(`/api/users/${userId}/follow`, { method: isFollowing ? 'DELETE' : 'POST' });
       setIsFollowing(!isFollowing);
       setUser({
         ...user,

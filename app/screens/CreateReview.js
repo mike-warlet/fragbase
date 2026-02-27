@@ -8,8 +8,7 @@ import {
   ScrollView,
   Alert 
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { apiCall } from '../config';
 
 export default function CreateReviewScreen({ route, navigation }) {
   const { perfumeId, perfumeName } = route.params;
@@ -30,11 +29,8 @@ export default function CreateReviewScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
-      
-      await api('/api/reviews', {
+      await apiCall('/api/reviews', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           perfume_id: perfumeId,
           rating,

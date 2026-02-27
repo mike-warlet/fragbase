@@ -8,8 +8,7 @@ import {
   ScrollView,
   Alert 
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { apiCall } from '../config';
 
 export default function CreatePostScreen({ route, navigation }) {
   const { perfumeId, perfumeName } = route.params || {};
@@ -25,11 +24,8 @@ export default function CreatePostScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
-      
-      await api('/api/posts', {
+      await apiCall('/api/posts', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           text: text.trim(),
           perfume_id: perfumeId || null,

@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { apiCall } from '../config';
+import { apiCall, apiUpload } from '../config';
 
 export default function EditProfile({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -69,9 +69,7 @@ export default function EditProfile({ navigation }) {
     formData.append('type', 'profile');
 
     try {
-      const response = await apiCall('/api/images/upload', 'POST', formData, {
-        'Content-Type': 'multipart/form-data',
-      });
+      const response = await apiUpload('/api/images/upload', formData);
       return response.url;
     } catch (error) {
       console.error('Upload error:', error);
@@ -98,10 +96,13 @@ export default function EditProfile({ navigation }) {
         }
       }
 
-      await apiCall('/api/users/me', 'PUT', {
-        display_name: profile.display_name,
-        bio: profile.bio,
-        avatar_url: avatarUrl,
+      await apiCall('/api/users/me', {
+        method: 'PUT',
+        body: JSON.stringify({
+          display_name: profile.display_name,
+          bio: profile.bio,
+          avatar_url: avatarUrl,
+        }),
       });
 
       Alert.alert('Sucesso', 'Perfil atualizado!');
