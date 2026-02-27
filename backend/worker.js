@@ -2,8 +2,8 @@
 import { handleRegister, handleLogin, handleGetMe } from './auth.js';
 import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews } from './perfumes.js';
 import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeReview } from './reviews.js';
-import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections } from './users.js';
-import { handleGetFeed, handleCreatePost, handleDeletePost } from './posts.js';
+import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections, handleGetFollowers, handleGetFollowing, handleGetNotifications } from './users.js';
+import { handleGetFeed, handleCreatePost, handleDeletePost, handleLikePost, handleGetComments, handleCreateComment, handleDeleteComment } from './posts.js';
 import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead } from './messages.js';
 import { handleUploadImage, handleGetImage, handleDeleteImage } from './images.js';
 import { handleGetCollections, handleGetCollection, handleCreateCollection, handleUpdateCollection, handleDeleteCollection, handleAddPerfumeToCollection, handleRemovePerfumeFromCollection } from './collections.js';
@@ -97,6 +97,17 @@ export default {
         const userId = path.match(/^\/api\/users\/([^\/]+)\/follow$/)[1];
         response = await handleFollowUser(request, env, userId);
       }
+      else if (path.match(/^\/api\/users\/([^\/]+)\/followers$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/users\/([^\/]+)\/followers$/)[1];
+        response = await handleGetFollowers(request, env, userId);
+      }
+      else if (path.match(/^\/api\/users\/([^\/]+)\/following$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/users\/([^\/]+)\/following$/)[1];
+        response = await handleGetFollowing(request, env, userId);
+      }
+      else if (path === '/api/notifications' && method === 'GET') {
+        response = await handleGetNotifications(request, env);
+      }
       else if (path.match(/^\/api\/users\/([^\/]+)\/taste-profile$/) && method === 'GET') {
         const userId = path.match(/^\/api\/users\/([^\/]+)\/taste-profile$/)[1];
         response = await handleGetTasteProfile(request, env, userId);
@@ -184,6 +195,22 @@ export default {
       }
       else if (path === '/api/posts' && method === 'POST') {
         response = await handleCreatePost(request, env);
+      }
+      else if (path.match(/^\/api\/posts\/([^\/]+)\/like$/) && method === 'POST') {
+        const postId = path.match(/^\/api\/posts\/([^\/]+)\/like$/)[1];
+        response = await handleLikePost(request, env, postId);
+      }
+      else if (path.match(/^\/api\/posts\/([^\/]+)\/comments$/) && method === 'GET') {
+        const postId = path.match(/^\/api\/posts\/([^\/]+)\/comments$/)[1];
+        response = await handleGetComments(request, env, postId);
+      }
+      else if (path.match(/^\/api\/posts\/([^\/]+)\/comments$/) && method === 'POST') {
+        const postId = path.match(/^\/api\/posts\/([^\/]+)\/comments$/)[1];
+        response = await handleCreateComment(request, env, postId);
+      }
+      else if (path.match(/^\/api\/comments\/([^\/]+)$/) && method === 'DELETE') {
+        const commentId = path.match(/^\/api\/comments\/([^\/]+)$/)[1];
+        response = await handleDeleteComment(request, env, commentId);
       }
       else if (path.match(/^\/api\/posts\/([^\/]+)$/) && method === 'DELETE') {
         const postId = path.match(/^\/api\/posts\/([^\/]+)$/)[1];

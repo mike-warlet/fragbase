@@ -237,6 +237,108 @@ export async function handleGetTasteProfile(request, env, userId) {
   }
 }
 
+// Get user's followers
+export async function handleGetFollowers(request, env, userId) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT u.id, u.username, u.name, u.photo_url, u.bio
+       FROM follows f
+       JOIN users u ON f.follower_id = u.id
+       WHERE f.followed_id = ?
+       ORDER BY f.created_at DESC`
+    ).bind(userId).all();
+
+    return new Response(JSON.stringify({ users: results }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Get user's following
+export async function handleGetFollowing(request, env, userId) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT u.id, u.username, u.name, u.photo_url, u.bio
+       FROM follows f
+       JOIN users u ON f.followed_id = u.id
+       WHERE f.follower_id = ?
+       ORDER BY f.created_at DESC`
+    ).bind(userId).all();
+
+    return new Response(JSON.stringify({ users: results }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Get notifications (likes, follows, comments on user's content)
+export async function handleGetNotifications(request, env) {
+  const auth = await requireAuth(request, env);
+  if (auth.error) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const url = new URL(request.url);
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '30'), 100);
+
+    // Combine: new followers, post likes, post comments, review likes
+    const { results } = await env.DB.prepare(
+      `SELECT * FROM (
+        SELECT 'follow' as type, f.follower_id as actor_id, u.name as actor_name,
+               u.photo_url as actor_photo, NULL as target_id, NULL as target_text,
+               f.created_at
+        FROM follows f JOIN users u ON f.follower_id = u.id
+        WHERE f.followed_id = ?
+
+        UNION ALL
+
+        SELECT 'post_like' as type, pl.user_id as actor_id, u.name as actor_name,
+               u.photo_url as actor_photo, pl.post_id as target_id,
+               SUBSTR(p.text, 1, 50) as target_text, pl.created_at
+        FROM post_likes pl
+        JOIN users u ON pl.user_id = u.id
+        JOIN posts p ON pl.post_id = p.id
+        WHERE p.user_id = ? AND pl.user_id != ?
+
+        UNION ALL
+
+        SELECT 'comment' as type, c.user_id as actor_id, u.name as actor_name,
+               u.photo_url as actor_photo, c.post_id as target_id,
+               SUBSTR(c.text, 1, 50) as target_text, c.created_at
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        JOIN posts p ON c.post_id = p.id
+        WHERE p.user_id = ? AND c.user_id != ?
+      )
+      ORDER BY created_at DESC
+      LIMIT ?`
+    ).bind(auth.userId, auth.userId, auth.userId, auth.userId, auth.userId, limit).all();
+
+    return new Response(JSON.stringify({ notifications: results }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 // Get user collections
 export async function handleGetUserCollections(request, env, userId) {
   try {
