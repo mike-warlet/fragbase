@@ -5,7 +5,7 @@ import { requireAuth } from './auth.js';
 export async function handleGetUser(request, env, userId) {
   try {
     const user = await env.DB.prepare(
-      'SELECT id, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
+      'SELECT id, username, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
     ).bind(userId).first();
     
     if (!user) {
@@ -68,7 +68,7 @@ export async function handleUpdateUser(request, env) {
     ).bind(name, bio, photo_url, auth.userId).run();
     
     const user = await env.DB.prepare(
-      'SELECT id, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
+      'SELECT id, username, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
     ).bind(auth.userId).first();
     
     return new Response(JSON.stringify({ user }), {

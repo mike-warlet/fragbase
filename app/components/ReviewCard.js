@@ -1,9 +1,29 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { apiCall } from '../config';
 
 export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
+  const [liked, setLiked] = useState(review.is_liked || false);
+  const [likeCount, setLikeCount] = useState(review.likes_count || 0);
+  const [liking, setLiking] = useState(false);
+
   const renderStars = (rating) => {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
+  };
+
+  const handleLike = async () => {
+    if (liking) return;
+    
+    setLiking(true);
+    try {
+      await apiCall(`/api/reviews/${review.id}/like`, 'POST');
+      setLiked(!liked);
+      setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao curtir review');
+    } finally {
+      setLiking(false);
+    }
   };
 
   return (
@@ -71,6 +91,16 @@ export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
           )}
         </View>
       )}
+
+      {/* Like button */}
+      <TouchableOpacity 
+        style={styles.likeButton}
+        onPress={handleLike}
+        disabled={liking}
+      >
+        <Text style={styles.likeIcon}>{liked ? '❤️' : '🤍'}</Text>
+        {likeCount > 0 && <Text style={styles.likeCount}>{likeCount}</Text>}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -181,5 +211,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#8b4513',
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  likeIcon: {
+    fontSize: 20,
+    marginRight: 6,
+  },
+  likeCount: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
   },
 });

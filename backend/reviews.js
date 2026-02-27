@@ -54,7 +54,17 @@ export async function handleCreateReview(request, env) {
     await env.DB.prepare(
       `INSERT INTO reviews (id, perfume_id, user_id, rating, longevity, performance, sillage, value, text) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(reviewId, perfume_id, auth.userId, rating, longevity, performance, sillage, value, text).run();
+    ).bind(
+      reviewId, 
+      perfume_id, 
+      auth.userId, 
+      rating, 
+      longevity || null, 
+      performance || null, 
+      sillage || null, 
+      value || null, 
+      text || null
+    ).run();
     
     const review = await env.DB.prepare(
       'SELECT r.*, u.name as user_name, u.photo_url as user_photo FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.id = ?'
