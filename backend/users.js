@@ -183,6 +183,60 @@ export async function handleFollowUser(request, env, userId) {
   }
 }
 
+// Get user taste profile (aggregated from reviews, wishlists, votes)
+export async function handleGetTasteProfile(request, env, userId) {
+  try {
+    // Top accords the user has voted on
+    const { results: topAccords } = await env.DB.prepare(
+      `SELECT accord_name, COUNT(*) as count, ROUND(AVG(strength), 1) as avg_strength
+       FROM accord_votes WHERE user_id = ?
+       GROUP BY accord_name ORDER BY count DESC LIMIT 10`
+    ).bind(userId).all();
+
+    // Most reviewed brands
+    const { results: topBrands } = await env.DB.prepare(
+      `SELECT p.brand, COUNT(*) as count
+       FROM reviews r JOIN perfumes p ON r.perfume_id = p.id
+       WHERE r.user_id = ?
+       GROUP BY p.brand ORDER BY count DESC LIMIT 5`
+    ).bind(userId).all();
+
+    // Wishlist stats
+    const wishlistStats = await env.DB.prepare(
+      `SELECT list_type, COUNT(*) as count FROM wishlists
+       WHERE user_id = ? GROUP BY list_type`
+    ).bind(userId).all();
+
+    const wishlists = { own: 0, want: 0, tried: 0 };
+    for (const row of wishlistStats.results) {
+      wishlists[row.list_type] = row.count;
+    }
+
+    // Average ratings given
+    const avgRatings = await env.DB.prepare(
+      `SELECT ROUND(AVG(rating), 1) as avg_rating, COUNT(*) as review_count
+       FROM reviews WHERE user_id = ?`
+    ).bind(userId).first();
+
+    return new Response(JSON.stringify({
+      taste_profile: {
+        top_accords: topAccords,
+        top_brands: topBrands,
+        wishlists,
+        avg_rating: avgRatings?.avg_rating || 0,
+        review_count: avgRatings?.review_count || 0,
+      }
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 // Get user collections
 export async function handleGetUserCollections(request, env, userId) {
   try {

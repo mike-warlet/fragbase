@@ -38,32 +38,99 @@ export async function handleListPerfumes(request, env) {
   }
 }
 
-// Get perfume details
+// Get perfume details (enriched with voting aggregates)
 export async function handleGetPerfume(request, env, perfumeId) {
   try {
     const perfume = await env.DB.prepare(
       'SELECT * FROM perfumes WHERE id = ?'
     ).bind(perfumeId).first();
-    
+
     if (!perfume) {
       return new Response(JSON.stringify({ error: 'Perfume not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
-    
-    // Get review stats
-    const stats = await env.DB.prepare(
-      'SELECT COUNT(*) as count, AVG(rating) as avg_rating FROM reviews WHERE perfume_id = ?'
-    ).bind(perfumeId).first();
-    
-    return new Response(JSON.stringify({ 
+
+    // Run all aggregate queries in batch for performance
+    const [statsResult, accordsResult, performanceResult, seasonsResult, wishlistResult] = await env.DB.batch([
+      env.DB.prepare(
+        'SELECT COUNT(*) as count, ROUND(AVG(rating), 1) as avg_rating FROM reviews WHERE perfume_id = ?'
+      ).bind(perfumeId),
+      env.DB.prepare(
+        `SELECT accord_name, ROUND(AVG(strength), 1) as avg_strength, COUNT(*) as vote_count
+         FROM accord_votes WHERE perfume_id = ?
+         GROUP BY accord_name ORDER BY avg_strength DESC`
+      ).bind(perfumeId),
+      env.DB.prepare(
+        `SELECT ROUND(AVG(longevity), 1) as avg_longevity, ROUND(AVG(sillage), 1) as avg_sillage,
+                COUNT(*) as vote_count
+         FROM performance_votes WHERE perfume_id = ?`
+      ).bind(perfumeId),
+      env.DB.prepare(
+        `SELECT SUM(spring) as spring, SUM(summer) as summer, SUM(fall) as fall,
+                SUM(winter) as winter, SUM(day) as day, SUM(night) as night, COUNT(*) as total
+         FROM season_votes WHERE perfume_id = ?`
+      ).bind(perfumeId),
+      env.DB.prepare(
+        'SELECT list_type, COUNT(*) as count FROM wishlists WHERE perfume_id = ? GROUP BY list_type'
+      ).bind(perfumeId),
+    ]);
+
+    const stats = statsResult.results[0];
+    const wishlistCounts = { own: 0, want: 0, tried: 0 };
+    for (const row of wishlistResult.results) {
+      wishlistCounts[row.list_type] = row.count;
+    }
+
+    // Parse notes from comma-separated to arrays
+    const parseNotes = (str) => str ? str.split(',').map(n => n.trim()).filter(Boolean) : [];
+
+    return new Response(JSON.stringify({
       perfume: {
         ...perfume,
-        review_count: stats.count || 0,
-        avg_rating: stats.avg_rating || 0
+        notes: {
+          top: parseNotes(perfume.notes_top),
+          heart: parseNotes(perfume.notes_heart),
+          base: parseNotes(perfume.notes_base),
+        },
+        review_count: stats?.count || 0,
+        avg_rating: stats?.avg_rating || 0,
+        accords: accordsResult.results || [],
+        performance: performanceResult.results[0] || null,
+        seasons: seasonsResult.results[0] || null,
+        wishlist_counts: wishlistCounts,
       }
     }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Get trending perfumes (by recent engagement)
+export async function handleGetTrendingPerfumes(request, env) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT p.id, p.name, p.brand, p.year, p.image_url, p.gender,
+              COUNT(DISTINCT r.id) as recent_reviews,
+              COUNT(DISTINCT w.id) as recent_wishlists,
+              COUNT(DISTINCT nv.id) as recent_votes,
+              (COUNT(DISTINCT r.id) * 3 + COUNT(DISTINCT w.id) * 2 + COUNT(DISTINCT nv.id)) as score
+       FROM perfumes p
+       LEFT JOIN reviews r ON p.id = r.perfume_id AND r.created_at > datetime('now', '-7 days')
+       LEFT JOIN wishlists w ON p.id = w.perfume_id AND w.created_at > datetime('now', '-7 days')
+       LEFT JOIN note_votes nv ON p.id = nv.perfume_id AND nv.created_at > datetime('now', '-7 days')
+       GROUP BY p.id
+       ORDER BY score DESC, p.name ASC
+       LIMIT 20`
+    ).all();
+
+    return new Response(JSON.stringify({ perfumes: results }), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {

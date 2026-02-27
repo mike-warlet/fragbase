@@ -7,6 +7,13 @@ import { handleGetFeed, handleCreatePost, handleDeletePost } from './posts.js';
 import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead } from './messages.js';
 import { handleUploadImage, handleGetImage, handleDeleteImage } from './images.js';
 import { handleGetCollections, handleGetCollection, handleCreateCollection, handleUpdateCollection, handleDeleteCollection, handleAddPerfumeToCollection, handleRemovePerfumeFromCollection } from './collections.js';
+import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVotes,
+         handlePerformanceVote, handleGetPerformanceVotes, handleSeasonVote, handleGetSeasonVotes,
+         handleGetSimilarPerfumes, handleAddToWishlist, handleRemoveFromWishlist,
+         handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
+import { handleGetNewMessages, handleTypingIndicator, handleGetChatStatus, handleMessageReaction, handleRemoveReaction } from './messages.js';
+import { handleGetTrendingPerfumes } from './perfumes.js';
+import { handleGetTasteProfile } from './users.js';
 
 // CORS headers
 const corsHeaders = {
@@ -90,13 +97,60 @@ export default {
         const userId = path.match(/^\/api\/users\/([^\/]+)\/follow$/)[1];
         response = await handleFollowUser(request, env, userId);
       }
+      else if (path.match(/^\/api\/users\/([^\/]+)\/taste-profile$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/users\/([^\/]+)\/taste-profile$/)[1];
+        response = await handleGetTasteProfile(request, env, userId);
+      }
       
       // Perfumes routes
+      else if (path === '/api/perfumes/trending' && method === 'GET') {
+        response = await handleGetTrendingPerfumes(request, env);
+      }
       else if (path === '/api/perfumes' && method === 'GET') {
         response = await handleListPerfumes(request, env);
       }
       else if (path === '/api/perfumes' && method === 'POST') {
         response = await handleCreatePerfume(request, env);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/notes\/vote$/) && method === 'POST') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/notes\/vote$/)[1];
+        response = await handleNoteVote(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/notes\/votes$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/notes\/votes$/)[1];
+        response = await handleGetNoteVotes(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/accords\/vote$/) && method === 'POST') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/accords\/vote$/)[1];
+        response = await handleAccordVote(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/accords\/votes$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/accords\/votes$/)[1];
+        response = await handleGetAccordVotes(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/performance\/vote$/) && method === 'POST') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/performance\/vote$/)[1];
+        response = await handlePerformanceVote(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/performance\/votes$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/performance\/votes$/)[1];
+        response = await handleGetPerformanceVotes(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/season\/vote$/) && method === 'POST') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/season\/vote$/)[1];
+        response = await handleSeasonVote(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/season\/votes$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/season\/votes$/)[1];
+        response = await handleGetSeasonVotes(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/similar$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/similar$/)[1];
+        response = await handleGetSimilarPerfumes(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/wishlist-status$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/wishlist-status$/)[1];
+        response = await handleGetWishlistStatus(request, env, perfumeId);
       }
       else if (path.match(/^\/api\/perfumes\/([^\/]+)$/) && method === 'GET') {
         const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)$/)[1];
@@ -136,12 +190,43 @@ export default {
         response = await handleDeletePost(request, env, postId);
       }
       
+      // Wishlists routes
+      else if (path === '/api/wishlists' && method === 'POST') {
+        response = await handleAddToWishlist(request, env);
+      }
+      else if (path === '/api/wishlists' && method === 'DELETE') {
+        response = await handleRemoveFromWishlist(request, env);
+      }
+      else if (path === '/api/wishlists/me' && method === 'GET') {
+        response = await handleGetMyWishlists(request, env);
+      }
+
       // Messages routes
       else if (path === '/api/messages/conversations' && method === 'GET') {
         response = await handleGetConversations(request, env);
       }
       else if (path === '/api/messages' && method === 'POST') {
         response = await handleSendMessage(request, env);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)\/new$/) && method === 'GET') {
+        const otherUserId = path.match(/^\/api\/messages\/([^\/]+)\/new$/)[1];
+        response = await handleGetNewMessages(request, env, otherUserId);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)\/typing$/) && method === 'POST') {
+        const otherUserId = path.match(/^\/api\/messages\/([^\/]+)\/typing$/)[1];
+        response = await handleTypingIndicator(request, env, otherUserId);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)\/status$/) && method === 'GET') {
+        const otherUserId = path.match(/^\/api\/messages\/([^\/]+)\/status$/)[1];
+        response = await handleGetChatStatus(request, env, otherUserId);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)\/react$/) && method === 'POST') {
+        const messageId = path.match(/^\/api\/messages\/([^\/]+)\/react$/)[1];
+        response = await handleMessageReaction(request, env, messageId);
+      }
+      else if (path.match(/^\/api\/messages\/([^\/]+)\/react$/) && method === 'DELETE') {
+        const messageId = path.match(/^\/api\/messages\/([^\/]+)\/react$/)[1];
+        response = await handleRemoveReaction(request, env, messageId);
       }
       else if (path.match(/^\/api\/messages\/([^\/]+)$/) && method === 'GET') {
         const otherUserId = path.match(/^\/api\/messages\/([^\/]+)$/)[1];
