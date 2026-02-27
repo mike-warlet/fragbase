@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
+import SOTDBanner from '../components/SOTDBanner';
 
 export default function HomeScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
@@ -123,7 +124,13 @@ export default function HomeScreen({ navigation }) {
   };
 
   const renderPost = ({ item }) => (
-    <View style={styles.postCard}>
+    <View style={[styles.postCard, item.type === 'sotd' && styles.sotdPostCard]}>
+      {/* SOTD badge */}
+      {item.type === 'sotd' && (
+        <View style={styles.sotdBadge}>
+          <Text style={styles.sotdBadgeText}>{'\uD83D\uDC43'} SOTD</Text>
+        </View>
+      )}
       {/* User header */}
       <TouchableOpacity
         style={styles.postHeader}
@@ -236,6 +243,7 @@ export default function HomeScreen({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
+        ListHeaderComponent={<SOTDBanner navigation={navigation} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
@@ -278,6 +286,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadows.md,
+  },
+  sotdPostCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  sotdBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primaryDark,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.xs,
+  },
+  sotdBadgeText: {
+    fontSize: typography.caption,
+    fontWeight: typography.bold,
+    color: colors.primaryLight,
   },
   postHeader: {
     flexDirection: 'row',

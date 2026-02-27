@@ -25,6 +25,7 @@ import MyCollectionScreen from './screens/MyCollection';
 import WishlistScreen from './screens/Wishlist';
 import AddFragranceScreen from './screens/AddFragrance';
 import NotificationsScreen from './screens/Notifications';
+import SOTDPickerScreen from './screens/SOTDPicker';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -176,6 +177,11 @@ function MainStack() {
         name="Notifications"
         component={NotificationsScreen}
         options={{ title: 'Notificações' }}
+      />
+      <Stack.Screen
+        name="SOTDPicker"
+        component={SOTDPickerScreen}
+        options={{ title: 'Perfume do Dia' }}
       />
     </Stack.Navigator>
   );

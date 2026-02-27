@@ -14,6 +14,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
 import { handleGetNewMessages, handleTypingIndicator, handleGetChatStatus, handleMessageReaction, handleRemoveReaction } from './messages.js';
 import { handleGetTrendingPerfumes } from './perfumes.js';
 import { handleGetTasteProfile } from './users.js';
+import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory } from './sotd.js';
 
 // CORS headers
 const corsHeaders = {
@@ -107,6 +108,20 @@ export default {
       }
       else if (path === '/api/notifications' && method === 'GET') {
         response = await handleGetNotifications(request, env);
+      }
+      // SOTD routes
+      else if (path === '/api/sotd' && method === 'POST') {
+        response = await handleSetSOTD(request, env);
+      }
+      else if (path === '/api/sotd/me' && method === 'GET') {
+        response = await handleGetMySOTD(request, env);
+      }
+      else if (path === '/api/sotd/feed' && method === 'GET') {
+        response = await handleGetSOTDFeed(request, env);
+      }
+      else if (path.match(/^\/api\/sotd\/([^\/]+)\/history$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/sotd\/([^\/]+)\/history$/)[1];
+        response = await handleGetSOTDHistory(request, env, userId);
       }
       else if (path.match(/^\/api\/users\/([^\/]+)\/taste-profile$/) && method === 'GET') {
         const userId = path.match(/^\/api\/users\/([^\/]+)\/taste-profile$/)[1];
