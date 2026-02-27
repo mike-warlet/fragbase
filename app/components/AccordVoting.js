@@ -27,7 +27,7 @@ export default function AccordVoting({ accords = [], userVotes = [], onVote }) {
     setShowVoteModal(null);
   };
 
-  const existingAccordNames = accords.map(a => a.accord_name.toLowerCase());
+  const existingAccordNames = accords.map(a => (a.accord_name || '').toLowerCase());
   const availableAccords = COMMON_ACCORDS.filter(
     a => !existingAccordNames.includes(a)
   );

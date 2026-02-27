@@ -15,7 +15,7 @@ import { colors, typography, spacing, borderRadius } from '../theme';
 import ReviewCard from '../components/ReviewCard';
 
 export default function UserProfile({ route, navigation }) {
-  const { userId } = route.params;
+  const { userId } = route.params || {};
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -37,11 +37,11 @@ export default function UserProfile({ route, navigation }) {
         apiCall('/api/auth/me'),
       ]);
 
-      setUser(userData);
-      setReviews(reviewsData);
-      setCollections(collectionsData);
-      setCurrentUserId(meData.id);
-      setIsFollowing(userData.is_following || false);
+      setUser(userData?.user || userData);
+      setReviews(Array.isArray(reviewsData) ? reviewsData : reviewsData?.reviews || []);
+      setCollections(Array.isArray(collectionsData) ? collectionsData : collectionsData?.collections || []);
+      setCurrentUserId(meData?.id || meData?.user?.id);
+      setIsFollowing((userData?.user || userData)?.is_following || false);
     } catch (error) {
       Alert.alert('Erro', 'Falha ao carregar perfil');
     } finally {
