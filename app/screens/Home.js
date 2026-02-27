@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View, Text, FlatList, StyleSheet, RefreshControl,
+  TouchableOpacity, Image, TextInput, ActivityIndicator, Alert,
+} from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
@@ -7,32 +10,125 @@ export default function HomeScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [expandedComments, setExpandedComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [commentText, setCommentText] = useState({});
 
   useEffect(() => {
-    loadFeed();
+    loadFeed(1, true);
   }, []);
 
-  const loadFeed = async () => {
+  const loadFeed = async (p = 1, reset = false) => {
+    if (!reset && loadingMore) return;
     try {
-      const data = await apiCall('/api/posts');
-      setPosts(data.posts);
+      const data = await apiCall(`/api/posts?page=${p}&limit=15`);
+      const newPosts = data.posts || [];
+      if (reset) {
+        setPosts(newPosts);
+      } else {
+        setPosts(prev => [...prev, ...newPosts]);
+      }
+      setHasMore(newPosts.length >= 15);
+      setPage(p);
     } catch (error) {
       console.error('Error loading feed:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   };
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadFeed();
+    loadFeed(1, true);
+  }, []);
+
+  const loadMore = () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    loadFeed(page + 1);
+  };
+
+  const handleLike = async (postId) => {
+    // Optimistic update
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        const liked = !p.is_liked;
+        return {
+          ...p,
+          is_liked: liked,
+          likes_count: liked ? (p.likes_count || 0) + 1 : Math.max(0, (p.likes_count || 0) - 1),
+        };
+      }
+      return p;
+    }));
+
+    try {
+      await apiCall(`/api/posts/${postId}/like`, { method: 'POST' });
+    } catch (error) {
+      // Revert on error
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          const liked = !p.is_liked;
+          return {
+            ...p,
+            is_liked: liked,
+            likes_count: liked ? (p.likes_count || 0) + 1 : Math.max(0, (p.likes_count || 0) - 1),
+          };
+        }
+        return p;
+      }));
+    }
+  };
+
+  const toggleComments = async (postId) => {
+    const isExpanded = expandedComments[postId];
+    setExpandedComments(prev => ({ ...prev, [postId]: !isExpanded }));
+
+    if (!isExpanded && !comments[postId]) {
+      try {
+        const data = await apiCall(`/api/posts/${postId}/comments`);
+        setComments(prev => ({ ...prev, [postId]: data.comments || [] }));
+      } catch (error) {
+        console.error('Failed to load comments:', error);
+      }
+    }
+  };
+
+  const handleComment = async (postId) => {
+    const text = commentText[postId]?.trim();
+    if (!text) return;
+
+    try {
+      const data = await apiCall(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      });
+
+      setComments(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), data.comment],
+      }));
+      setCommentText(prev => ({ ...prev, [postId]: '' }));
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p
+      ));
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao comentar');
+    }
   };
 
   const renderPost = ({ item }) => (
     <View style={styles.postCard}>
       {/* User header */}
-      <View style={styles.postHeader}>
+      <TouchableOpacity
+        style={styles.postHeader}
+        onPress={() => navigation.getParent()?.navigate('UserProfile', { userId: item.user_id })}
+      >
         {item.user_photo ? (
           <Image source={{ uri: item.user_photo }} style={styles.avatar} />
         ) : (
@@ -48,7 +144,7 @@ export default function HomeScreen({ navigation }) {
             {new Date(item.created_at).toLocaleDateString('pt-BR')}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Perfume info if linked */}
       {item.perfume_name && (
@@ -67,21 +163,65 @@ export default function HomeScreen({ navigation }) {
       )}
 
       {/* Post content */}
-      {item.text && (
-        <Text style={styles.postText}>{item.text}</Text>
-      )}
+      {item.text && <Text style={styles.postText}>{item.text}</Text>}
 
       {/* Post image */}
       {item.image_url && !item.perfume_id && (
         <Image source={{ uri: item.image_url }} style={styles.postImage} />
+      )}
+
+      {/* Action bar */}
+      <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => handleLike(item.id)}>
+          <Text style={styles.actionIcon}>{item.is_liked ? '\u2764\uFE0F' : '\uD83E\uDD0D'}</Text>
+          {item.likes_count > 0 && (
+            <Text style={styles.actionCount}>{item.likes_count}</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={() => toggleComments(item.id)}>
+          <Text style={styles.actionIcon}>{'\uD83D\uDCAC'}</Text>
+          {item.comments_count > 0 && (
+            <Text style={styles.actionCount}>{item.comments_count}</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Comments section */}
+      {expandedComments[item.id] && (
+        <View style={styles.commentsSection}>
+          {(comments[item.id] || []).map((c) => (
+            <View key={c.id} style={styles.commentItem}>
+              <Text style={styles.commentUser}>{c.user_name}</Text>
+              <Text style={styles.commentText}>{c.text}</Text>
+            </View>
+          ))}
+
+          <View style={styles.commentInput}>
+            <TextInput
+              style={styles.commentTextInput}
+              placeholder="Escrever comentário..."
+              placeholderTextColor={colors.textTertiary}
+              value={commentText[item.id] || ''}
+              onChangeText={(t) => setCommentText(prev => ({ ...prev, [item.id]: t }))}
+              onSubmitEditing={() => handleComment(item.id)}
+            />
+            <TouchableOpacity
+              style={styles.sendBtn}
+              onPress={() => handleComment(item.id)}
+            >
+              <Text style={styles.sendText}>Enviar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
     </View>
   );
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Carregando feed...</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -95,6 +235,13 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator color={colors.primary} style={{ padding: spacing.md }} />
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -208,12 +355,75 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     marginTop: spacing.sm,
   },
-  loadingText: {
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    fontSize: typography.h6,
-    color: colors.textSecondary,
+  // Actions
+  actionBar: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    gap: spacing.lg,
   },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionIcon: {
+    fontSize: 20,
+  },
+  actionCount: {
+    marginLeft: spacing.xs,
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    fontWeight: typography.medium,
+  },
+  // Comments
+  commentsSection: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    marginBottom: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  commentUser: {
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginRight: spacing.xs,
+  },
+  commentText: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  commentInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  commentTextInput: {
+    flex: 1,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.round,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    fontSize: typography.body,
+    color: colors.textPrimary,
+  },
+  sendBtn: {
+    paddingHorizontal: spacing.sm,
+  },
+  sendText: {
+    color: colors.primary,
+    fontWeight: typography.semibold,
+    fontSize: typography.body,
+  },
+  // Other
   emptyContainer: {
     alignItems: 'center',
     paddingTop: spacing.xxl,
