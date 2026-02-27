@@ -24,6 +24,7 @@ import CreateCollectionScreen from './screens/CreateCollection';
 import MyCollectionScreen from './screens/MyCollection';
 import WishlistScreen from './screens/Wishlist';
 import AddFragranceScreen from './screens/AddFragrance';
+import NotificationsScreen from './screens/Notifications';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -170,6 +171,11 @@ function MainStack() {
         name="AddFragrance"
         component={AddFragranceScreen}
         options={{ title: 'Adicionar Perfume' }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: 'Notificações' }}
       />
     </Stack.Navigator>
   );
