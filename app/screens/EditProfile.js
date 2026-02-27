@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { apiCall, apiUpload } from '../config';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
 export default function EditProfile({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -117,7 +118,7 @@ export default function EditProfile({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B4789" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -153,6 +154,7 @@ export default function EditProfile({ navigation }) {
           value={profile.display_name}
           onChangeText={(text) => setProfile({ ...profile, display_name: text })}
           placeholder="Seu nome"
+          placeholderTextColor={colors.textTertiary}
         />
 
         <Text style={styles.label}>Bio</Text>
@@ -161,6 +163,7 @@ export default function EditProfile({ navigation }) {
           value={profile.bio}
           onChangeText={(text) => setProfile({ ...profile, bio: text })}
           placeholder="Conte algo sobre você..."
+          placeholderTextColor={colors.textTertiary}
           multiline
           numberOfLines={4}
         />
@@ -191,17 +194,18 @@ export default function EditProfile({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: 30,
-    backgroundColor: '#F5F5F5',
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.surface,
   },
   avatar: {
     width: 120,
@@ -214,67 +218,69 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
   },
   avatarText: {
-    color: '#FFF',
-    fontSize: 12,
+    color: colors.textPrimary,
+    fontSize: typography.caption,
     textAlign: 'center',
   },
   form: {
-    padding: 20,
+    padding: spacing.lg,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    marginTop: 15,
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md - 4,
+    fontSize: typography.h6,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceLight,
   },
   disabledInput: {
-    backgroundColor: '#F5F5F5',
-    color: '#999',
+    backgroundColor: colors.surface,
+    color: colors.textTertiary,
   },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
   },
   hint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+    fontSize: typography.caption,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
   },
   saveButton: {
-    backgroundColor: '#8B4789',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
-    marginTop: 25,
+    marginTop: spacing.lg,
   },
   saveButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    fontSize: typography.h6,
+    fontWeight: typography.semibold,
   },
   disabledButton: {
     opacity: 0.6,
   },
   cancelButton: {
-    padding: 15,
+    padding: spacing.md,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: spacing.sm,
   },
   cancelButtonText: {
-    color: '#8B4789',
-    fontSize: 16,
+    color: colors.primaryLight,
+    fontSize: typography.h6,
   },
 });
