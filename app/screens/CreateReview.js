@@ -9,6 +9,7 @@ import {
   Alert 
 } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
 export default function CreateReviewScreen({ route, navigation }) {
   const { perfumeId, perfumeName } = route.params;
@@ -87,6 +88,7 @@ export default function CreateReviewScreen({ route, navigation }) {
         <TextInput
           style={styles.textInput}
           placeholder="Compartilhe sua experiência com este perfume..."
+          placeholderTextColor={colors.textTertiary}
           value={text}
           onChangeText={setText}
           multiline
@@ -118,85 +120,86 @@ export default function CreateReviewScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: 'white',
-    padding: 20,
-    marginBottom: 10,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: typography.h4,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
   },
   ratingSection: {
-    backgroundColor: 'white',
-    padding: 20,
-    marginBottom: 10,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
   },
   ratingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: typography.h6,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md - 4,
   },
   stars: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   starButton: {
-    padding: 8,
+    padding: spacing.sm,
   },
   starText: {
     fontSize: 32,
   },
   textSection: {
-    backgroundColor: 'white',
-    padding: 20,
-    marginBottom: 10,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
   },
   textLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: typography.h6,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md - 4,
   },
   textInput: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 15,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: typography.body + 1,
     minHeight: 120,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: colors.border,
+    color: colors.textPrimary,
   },
   submitButton: {
-    backgroundColor: '#8b4513',
-    marginHorizontal: 20,
-    marginTop: 10,
-    paddingVertical: 16,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: '#ccc',
+    opacity: 0.5,
   },
   submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: typography.h6,
+    fontWeight: typography.bold,
   },
   cancelButton: {
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 30,
-    paddingVertical: 16,
-    borderRadius: 8,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
+    color: colors.textSecondary,
+    fontSize: typography.h6,
   },
 });
