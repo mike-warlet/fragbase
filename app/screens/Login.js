@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useAuth } from '../AuthContext';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
+  const { login, register } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
@@ -18,134 +19,131 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      console.log('Tentando login:', { username, endpoint: isLogin ? 'login' : 'register' });
-      
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-      
-      // Send username as "email" field (backend converts it)
-      const body = isLogin 
-        ? { email: username, password }
-        : { email: username, password, name };
-
-      const data = await api(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-
-      console.log('Login sucesso:', data);
-
-      // Save token
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
-
-      // Navigate to main app
-      navigation.replace('Main');
+      if (isLogin) {
+        await login(username, password);
+      } else {
+        await register(username, password, name);
+      }
     } catch (error) {
-      console.error('Erro no login:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível fazer login. Verifique sua conexão.');
+      Alert.alert('Erro', error.message || 'Nao foi possivel fazer login.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>FragBase</Text>
-      <Text style={styles.subtitle}>Sua rede social de perfumaria</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={styles.inner}>
+        <Text style={styles.title}>FragBase</Text>
+        <Text style={styles.subtitle}>A tua rede social de perfumaria</Text>
 
-      {!isLogin && (
+        {!isLogin && (
+          <TextInput
+            style={styles.input}
+            placeholder="Nome"
+            placeholderTextColor={colors.textTertiary}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+          />
+        )}
+
         <TextInput
           style={styles.input}
-          placeholder="Nome"
-          value={name}
-          onChangeText={setName}
-          autoCapitalize="words"
+          placeholder={isLogin ? 'Nome de utilizador (ex: maria)' : 'Escolhe um nome de utilizador'}
+          placeholderTextColor={colors.textTertiary}
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
-      )}
 
-      <TextInput
-        style={styles.input}
-        placeholder={isLogin ? "Nome de usuário (ex: maria)" : "Escolha um nome de usuário"}
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          placeholderTextColor={colors.textTertiary}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleAuth}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Cadastrar')}
+          </Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleAuth}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Cadastrar')}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-        <Text style={styles.switchText}>
-          {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+          <Text style={styles.switchText}>
+            {isLogin ? 'Nao tem conta? Cadastre-se' : 'Ja tem conta? Entre'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  inner: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: spacing.lg,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#8b4513',
-    marginBottom: 10,
+    fontSize: typography.h1,
+    fontWeight: typography.bold,
+    color: colors.primary,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 40,
+    fontSize: typography.h6,
+    color: colors.textSecondary,
+    marginBottom: spacing.xxl,
   },
   input: {
     width: '100%',
     height: 50,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    fontSize: 16,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    fontSize: typography.body,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
   },
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#8b4513',
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: spacing.sm,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
   },
   switchText: {
-    marginTop: 20,
-    color: '#8b4513',
-    fontSize: 16,
+    marginTop: spacing.lg,
+    color: colors.primaryLight,
+    fontSize: typography.h6,
   },
 });
