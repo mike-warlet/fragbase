@@ -23,6 +23,7 @@ export default function UserProfile({ route, navigation }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [tasteMatch, setTasteMatch] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -36,6 +37,11 @@ export default function UserProfile({ route, navigation }) {
         apiCall(`/api/users/${userId}/collections`),
         apiCall('/api/auth/me'),
       ]);
+
+      // Load taste match asynchronously
+      apiCall(`/api/taste-match/${userId}`).then(data => {
+        setTasteMatch(data);
+      }).catch(() => {});
 
       setUser(userData?.user || userData);
       setReviews(Array.isArray(reviewsData) ? reviewsData : reviewsData?.reviews || []);
@@ -102,6 +108,19 @@ export default function UserProfile({ route, navigation }) {
             <Text style={styles.statLabel}>Seguindo</Text>
           </View>
         </View>
+
+        {/* Taste match badge */}
+        {!isOwnProfile && tasteMatch && tasteMatch.match_pct > 0 && (
+          <View style={styles.tasteMatch}>
+            <Text style={styles.tasteMatchPct}>{tasteMatch.match_pct}%</Text>
+            <Text style={styles.tasteMatchLabel}>taste match</Text>
+            {tasteMatch.shared_count > 0 && (
+              <Text style={styles.tasteMatchDetail}>
+                {tasteMatch.shared_count} perfumes em comum
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Follow button */}
         {!isOwnProfile && (
@@ -227,6 +246,30 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  tasteMatch: {
+    backgroundColor: colors.primaryDark + '30',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary + '40',
+  },
+  tasteMatchPct: {
+    fontSize: typography.h3,
+    fontWeight: typography.bold,
+    color: colors.primary,
+  },
+  tasteMatchLabel: {
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+  },
+  tasteMatchDetail: {
+    fontSize: typography.small,
+    color: colors.textTertiary,
+    marginTop: 2,
   },
   followButton: {
     backgroundColor: colors.primary,

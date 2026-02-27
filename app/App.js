@@ -31,6 +31,7 @@ import CompareScreen from './screens/Compare';
 import FragranceDiaryScreen from './screens/FragranceDiary';
 import ChallengesScreen from './screens/Challenges';
 import ChallengeDetailScreen from './screens/ChallengeDetail';
+import TasteTwinsScreen from './screens/TasteTwins';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -207,6 +208,11 @@ function MainStack() {
         name="ChallengeDetail"
         component={ChallengeDetailScreen}
         options={{ title: 'Desafio' }}
+      />
+      <Stack.Screen
+        name="TasteTwins"
+        component={TasteTwinsScreen}
+        options={{ title: 'Taste Twins' }}
       />
     </Stack.Navigator>
   );

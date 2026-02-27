@@ -119,6 +119,15 @@ export default function Profile({ navigation }) {
 
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('TasteTwins')}
+        >
+          <Text style={styles.menuIcon}>👥</Text>
+          <Text style={styles.menuText}>Taste Twins</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('Challenges')}
         >
           <Text style={styles.menuIcon}>🏆</Text>

@@ -14,6 +14,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
 import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory, handleGetDiaryCalendar, handleGetDiaryStats } from './sotd.js';
 import { handleGlobalSearch } from './search.js';
 import { handleGetChallenges, handleGetChallenge, handleSubmitEntry, handleVoteEntry, handleGetUserBadges } from './challenges.js';
+import { handleGetTasteTwins, handleGetTasteMatch } from './taste.js';
 import { handleGetLayeringSuggestions, handleCreateLayeringSuggestion, handleVoteLayeringCombo, handleGetTopLayeringCombos } from './layering.js';
 
 // CORS headers
@@ -137,6 +138,15 @@ export default {
       // Global search
       else if (path === '/api/search' && method === 'GET') {
         response = await handleGlobalSearch(request, env);
+      }
+
+      // Taste Twins
+      else if (path === '/api/taste-twins' && method === 'GET') {
+        response = await handleGetTasteTwins(request, env);
+      }
+      else if (path.match(/^\/api\/taste-match\/([^\/]+)$/) && method === 'GET') {
+        const otherUserId = path.match(/^\/api\/taste-match\/([^\/]+)$/)[1];
+        response = await handleGetTasteMatch(request, env, otherUserId);
       }
 
       // Challenge routes
