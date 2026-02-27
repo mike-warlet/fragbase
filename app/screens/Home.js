@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Image } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
-import theme from '../theme';
+import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
 export default function HomeScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
@@ -15,10 +14,7 @@ export default function HomeScreen({ navigation }) {
 
   const loadFeed = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      const data = await api('/api/posts', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall('/api/posts');
       setPosts(data.posts);
     } catch (error) {
       console.error('Error loading feed:', error);
@@ -56,7 +52,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* Perfume info if linked */}
       {item.perfume_name && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.perfumeLink}
           onPress={() => navigation.getParent()?.navigate('PerfumeDetail', { perfumeId: item.perfume_id })}
         >
@@ -95,164 +91,161 @@ export default function HomeScreen({ navigation }) {
       <FlatList
         data={posts}
         renderItem={renderPost}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Nenhum post ainda 🌸</Text>
+            <Text style={styles.emptyTitle}>Nenhum post ainda</Text>
             <Text style={styles.emptyText}>
-              Siga outros usuários para ver posts no seu feed
+              Siga outros utilizadores para ver posts no seu feed
             </Text>
           </View>
         }
       />
-      
+
       {/* Floating action button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.getParent()?.navigate('CreatePost')}
       >
-        <Text style={styles.fabText}>✏️</Text>
+        <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-import theme from '../theme';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
   },
   list: {
-    padding: 15,
+    padding: spacing.md,
   },
   postCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    ...theme.shadows.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    ...shadows.md,
   },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   avatarPlaceholder: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#8b4513',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   avatarText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: typography.h6,
+    fontWeight: typography.bold,
   },
   headerInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.body + 1,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
   },
   postDate: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: typography.caption,
+    color: colors.textTertiary,
     marginTop: 2,
   },
   perfumeLink: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    backgroundColor: colors.backgroundLight,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
   },
   perfumeImage: {
     width: 50,
     height: 50,
-    borderRadius: 6,
-    marginRight: 12,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.sm,
   },
   perfumeInfo: {
     flex: 1,
     justifyContent: 'center',
   },
   perfumeName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   perfumeBrand: {
-    fontSize: 13,
-    color: '#8b4513',
+    fontSize: typography.caption + 1,
+    color: colors.primary,
   },
   postText: {
-    fontSize: 15,
-    color: '#333',
+    fontSize: typography.body + 1,
+    color: colors.textPrimary,
     lineHeight: 22,
   },
   postImage: {
     width: '100%',
     height: 250,
-    borderRadius: 8,
-    marginTop: 12,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.sm,
   },
   loadingText: {
     textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
+    marginTop: spacing.lg,
+    fontSize: typography.h6,
+    color: colors.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: spacing.xxl,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+    fontSize: typography.h4,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: typography.body,
+    color: colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xl,
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#8b4513',
+    right: spacing.lg,
+    bottom: spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
+    ...shadows.lg,
   },
   fabText: {
-    fontSize: 24,
+    fontSize: 28,
+    color: colors.textPrimary,
+    fontWeight: typography.bold,
+    marginTop: -2,
   },
 });
