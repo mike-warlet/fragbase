@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
 export default function AddToCollectionModal({ visible, onClose, perfumeId, perfumeName }) {
   const [collections, setCollections] = useState([]);
@@ -38,8 +39,9 @@ export default function AddToCollectionModal({ visible, onClose, perfumeId, perf
   const handleAddToCollection = async (collectionId) => {
     setAdding(collectionId);
     try {
-      await apiCall(`/api/collections/${collectionId}/perfumes`, 'POST', {
-        perfume_id: perfumeId,
+      await apiCall(`/api/collections/${collectionId}/perfumes`, {
+        method: 'POST',
+        body: JSON.stringify({ perfume_id: perfumeId }),
       });
       Alert.alert('Sucesso', `${perfumeName} adicionado à coleção!`);
       onClose();
@@ -72,7 +74,7 @@ export default function AddToCollectionModal({ visible, onClose, perfumeId, perf
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#8B4789" />
+              <ActivityIndicator size="large" color={colors.primary} />
             </View>
           ) : collections.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -98,7 +100,7 @@ export default function AddToCollectionModal({ visible, onClose, perfumeId, perf
                     </Text>
                   </View>
                   {adding === item.id ? (
-                    <ActivityIndicator color="#8B4789" />
+                    <ActivityIndicator color={colors.primary} />
                   ) : (
                     <Text style={styles.addIcon}>+</Text>
                   )}
@@ -115,74 +117,74 @@ export default function AddToCollectionModal({ visible, onClose, perfumeId, perf
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modal: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: borderRadius.xl + 4,
+    borderTopRightRadius: borderRadius.xl + 4,
     maxHeight: '80%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    borderBottomColor: colors.border,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
   },
   closeButton: {
     fontSize: 24,
-    color: '#999',
+    color: colors.textTertiary,
   },
   loadingContainer: {
-    padding: 40,
+    padding: spacing.xl + 8,
     alignItems: 'center',
   },
   emptyContainer: {
-    padding: 40,
+    padding: spacing.xl + 8,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginBottom: 8,
+    fontSize: typography.h6,
+    color: colors.textTertiary,
+    marginBottom: spacing.sm,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#BBB',
+    fontSize: typography.body,
+    color: colors.textTertiary,
     textAlign: 'center',
   },
   collectionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: colors.border,
   },
   collectionInfo: {
     flex: 1,
   },
   collectionName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: typography.h6,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   collectionCount: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: typography.caption,
+    color: colors.textTertiary,
   },
   addIcon: {
     fontSize: 28,
-    color: '#8B4789',
-    fontWeight: 'bold',
+    color: colors.primary,
+    fontWeight: typography.bold,
   },
 });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { apiCall } from '../config';
+import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
 export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
   const [liked, setLiked] = useState(review.is_liked || false);
@@ -16,7 +17,7 @@ export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
     
     setLiking(true);
     try {
-      await apiCall(`/api/reviews/${review.id}/like`, 'POST');
+      await apiCall(`/api/reviews/${review.id}/like`, { method: 'POST' });
       setLiked(!liked);
       setLikeCount(liked ? likeCount - 1 : likeCount + 1);
     } catch (error) {
@@ -107,21 +108,17 @@ export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md - 4,
+    ...shadows.md,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md - 4,
   },
   userInfo: {
     flexDirection: 'row',
@@ -131,102 +128,102 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   avatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#8b4513',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   avatarText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: colors.textPrimary,
+    fontSize: typography.body,
+    fontWeight: typography.bold,
   },
   userName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
   },
   date: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: typography.caption,
+    color: colors.textTertiary,
   },
   perfumeInfo: {
-    marginBottom: 12,
-    paddingBottom: 12,
+    marginBottom: spacing.md - 4,
+    paddingBottom: spacing.md - 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.border,
   },
   perfumeName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: typography.body + 1,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   perfumeBrand: {
-    fontSize: 13,
-    color: '#8b4513',
+    fontSize: typography.caption + 1,
+    color: colors.primary,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   stars: {
-    fontSize: 16,
-    marginRight: 8,
+    fontSize: typography.h6,
+    marginRight: spacing.sm,
   },
   ratingText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
   },
   text: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: typography.body,
+    color: colors.textSecondary,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: spacing.md - 4,
   },
   details: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingTop: 12,
+    paddingTop: spacing.md - 4,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: colors.border,
   },
   detailItem: {
     alignItems: 'center',
   },
   detailLabel: {
-    fontSize: 11,
-    color: '#999',
-    marginBottom: 4,
+    fontSize: typography.small + 1,
+    color: colors.textTertiary,
+    marginBottom: spacing.xs,
   },
   detailValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8b4513',
+    fontSize: typography.caption + 1,
+    fontWeight: typography.semibold,
+    color: colors.primary,
   },
   likeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: spacing.md - 4,
+    paddingTop: spacing.md - 4,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: colors.border,
   },
   likeIcon: {
     fontSize: 20,
-    marginRight: 6,
+    marginRight: spacing.xs + 2,
   },
   likeCount: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    fontWeight: typography.semibold,
   },
 });
