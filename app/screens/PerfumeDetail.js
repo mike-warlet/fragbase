@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../config';
+import { api, apiCall } from '../config';
 import NoteVoting from '../components/NoteVoting';
 import AccordVoting from '../components/AccordVoting';
 import PerformanceVoting from '../components/PerformanceVoting';
@@ -14,7 +13,7 @@ import AddToCollectionModal from '../components/AddToCollectionModal';
 import theme from '../theme';
 
 export default function PerfumeDetailScreen({ route, navigation }) {
-  const { perfumeId } = route.params;
+  const { perfumeId } = route.params || {};
   const [perfume, setPerfume] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,8 +26,6 @@ export default function PerfumeDetailScreen({ route, navigation }) {
   const [seasonVotes, setSeasonVotes] = useState({ seasons: null, user_vote: null });
   const [wishlistStatus, setWishlistStatus] = useState({ status: {}, counts: {} });
   const [similarPerfumes, setSimilarPerfumes] = useState([]);
-
-  const getToken = async () => AsyncStorage.getItem('token');
 
   useEffect(() => {
     loadPerfume();
@@ -49,28 +46,22 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const loadReviews = async () => {
     try {
-      const token = await getToken();
-      const data = await api(`/api/perfumes/${perfumeId}/reviews`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setReviews(data.reviews);
+      const data = await apiCall(`/api/perfumes/${perfumeId}/reviews`);
+      setReviews(data.reviews || []);
     } catch (error) {
       console.error('Error loading reviews:', error);
     }
   };
 
   const loadVotingData = async () => {
-    const token = await getToken();
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
     try {
       const [notesData, accordsData, perfData, seasonData, similarData, wishlistData] = await Promise.allSettled([
-        api(`/api/perfumes/${perfumeId}/notes/votes`, { headers }),
-        api(`/api/perfumes/${perfumeId}/accords/votes`, { headers }),
-        api(`/api/perfumes/${perfumeId}/performance/votes`, { headers }),
-        api(`/api/perfumes/${perfumeId}/season/votes`, { headers }),
+        apiCall(`/api/perfumes/${perfumeId}/notes/votes`),
+        apiCall(`/api/perfumes/${perfumeId}/accords/votes`),
+        apiCall(`/api/perfumes/${perfumeId}/performance/votes`),
+        apiCall(`/api/perfumes/${perfumeId}/season/votes`),
         api(`/api/perfumes/${perfumeId}/similar`),
-        token ? api(`/api/perfumes/${perfumeId}/wishlist-status`, { headers }) : Promise.resolve({ status: {}, counts: {} }),
+        apiCall(`/api/perfumes/${perfumeId}/wishlist-status`).catch(() => ({ status: {}, counts: {} })),
       ]);
 
       if (notesData.status === 'fulfilled') setNoteVotes(notesData.value);
@@ -88,16 +79,11 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const handleNoteVote = useCallback(async (noteName, noteLayer, intensity) => {
     try {
-      const token = await getToken();
-      await api(`/api/perfumes/${perfumeId}/notes/vote`, {
+      await apiCall(`/api/perfumes/${perfumeId}/notes/vote`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ note_name: noteName, note_layer: noteLayer, intensity }),
       });
-      // Reload note votes
-      const data = await api(`/api/perfumes/${perfumeId}/notes/votes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/perfumes/${perfumeId}/notes/votes`);
       setNoteVotes(data);
     } catch (error) {
       console.error('Note vote error:', error);
@@ -106,15 +92,11 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const handleAccordVote = useCallback(async (accordName, strength) => {
     try {
-      const token = await getToken();
-      await api(`/api/perfumes/${perfumeId}/accords/vote`, {
+      await apiCall(`/api/perfumes/${perfumeId}/accords/vote`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ accord_name: accordName, strength }),
       });
-      const data = await api(`/api/perfumes/${perfumeId}/accords/votes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/perfumes/${perfumeId}/accords/votes`);
       setAccordVotes(data);
     } catch (error) {
       console.error('Accord vote error:', error);
@@ -123,15 +105,11 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const handlePerformanceVote = useCallback(async (metric, value) => {
     try {
-      const token = await getToken();
-      await api(`/api/perfumes/${perfumeId}/performance/vote`, {
+      await apiCall(`/api/perfumes/${perfumeId}/performance/vote`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ [metric]: value }),
       });
-      const data = await api(`/api/perfumes/${perfumeId}/performance/votes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/perfumes/${perfumeId}/performance/votes`);
       setPerformanceVotes(data);
     } catch (error) {
       console.error('Performance vote error:', error);
@@ -140,15 +118,11 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const handleSeasonVote = useCallback(async (votes) => {
     try {
-      const token = await getToken();
-      await api(`/api/perfumes/${perfumeId}/season/vote`, {
+      await apiCall(`/api/perfumes/${perfumeId}/season/vote`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify(votes),
       });
-      const data = await api(`/api/perfumes/${perfumeId}/season/votes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/perfumes/${perfumeId}/season/votes`);
       setSeasonVotes(data);
     } catch (error) {
       console.error('Season vote error:', error);
@@ -157,27 +131,21 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const handleWishlistToggle = useCallback(async (listType) => {
     try {
-      const token = await getToken();
       const isActive = wishlistStatus.status[listType];
 
       if (isActive) {
-        await api('/api/wishlists', {
+        await apiCall('/api/wishlists', {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
           body: JSON.stringify({ perfume_id: perfumeId, list_type: listType }),
         });
       } else {
-        await api('/api/wishlists', {
+        await apiCall('/api/wishlists', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
           body: JSON.stringify({ perfume_id: perfumeId, list_type: listType }),
         });
       }
 
-      // Reload status
-      const data = await api(`/api/perfumes/${perfumeId}/wishlist-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCall(`/api/perfumes/${perfumeId}/wishlist-status`);
       setWishlistStatus(data);
     } catch (error) {
       console.error('Wishlist toggle error:', error);
