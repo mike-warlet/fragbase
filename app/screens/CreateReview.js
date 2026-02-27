@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius } from '../theme';
+import RatingStars from '../components/RatingStars';
 
 export default function CreateReviewScreen({ route, navigation }) {
   const { perfumeId, perfumeName } = route.params;
@@ -52,22 +53,10 @@ export default function CreateReviewScreen({ route, navigation }) {
     }
   };
 
-  const renderStarPicker = (currentValue, setValue, label) => (
+  const renderRatingRow = (currentValue, setter, label) => (
     <View style={styles.ratingSection}>
       <Text style={styles.ratingLabel}>{label}</Text>
-      <View style={styles.stars}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => setValue(star)}
-            style={styles.starButton}
-          >
-            <Text style={styles.starText}>
-              {star <= currentValue ? '⭐' : '☆'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <RatingStars value={currentValue} onChange={setter} size={32} showLabel />
     </View>
   );
 
@@ -77,11 +66,11 @@ export default function CreateReviewScreen({ route, navigation }) {
         <Text style={styles.title}>Review de {perfumeName}</Text>
       </View>
 
-      {renderStarPicker(rating, setRating, 'Nota Geral *')}
-      {renderStarPicker(longevity, setLongevity, 'Duração')}
-      {renderStarPicker(performance, setPerformance, 'Performance')}
-      {renderStarPicker(sillage, setSillage, 'Sillage (Projeção)')}
-      {renderStarPicker(value, setValue, 'Custo-Benefício')}
+      {renderRatingRow(rating, setRating, 'Nota Geral *')}
+      {renderRatingRow(longevity, setLongevity, 'Duração')}
+      {renderRatingRow(performance, setPerformance, 'Performance')}
+      {renderRatingRow(sillage, setSillage, 'Sillage (Projeção)')}
+      {renderRatingRow(value, setValue, 'Custo-Benefício')}
 
       <View style={styles.textSection}>
         <Text style={styles.textLabel}>Seu Review (opcional)</Text>
@@ -142,16 +131,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.semibold,
     color: colors.textPrimary,
     marginBottom: spacing.md - 4,
-  },
-  stars: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  starButton: {
-    padding: spacing.sm,
-  },
-  starText: {
-    fontSize: 32,
   },
   textSection: {
     backgroundColor: colors.surface,
