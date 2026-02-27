@@ -1,29 +1,68 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../config';
+import MessageBubble from '../components/MessageBubble';
+import TypingIndicator from '../components/TypingIndicator';
+import OnlineIndicator from '../components/OnlineIndicator';
 import theme from '../theme';
 
 export default function ChatScreen({ route, navigation }) {
   const { userId, userName, userPhoto } = route.params;
   const [messages, setMessages] = useState([]);
+  const [reactions, setReactions] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
   const flatListRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+  const lastTypingSentRef = useRef(0);
+  const pollIntervalRef = useRef(1000);
 
   useEffect(() => {
     loadCurrentUser();
     loadMessages();
-    
-    // Poll for new messages every 3 seconds
-    const interval = setInterval(() => {
-      loadMessages(true);
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, []);
+
+    // Set header with online indicator
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={styles.headerTitle}>
+          <Text style={styles.headerName}>{userName}</Text>
+          {isOnline && <OnlineIndicator isOnline size={8} />}
+        </View>
+      ),
+    });
+  }, [isOnline]);
+
+  // Adaptive polling
+  useEffect(() => {
+    let timer;
+    const poll = async () => {
+      await pollStatus();
+      await loadNewMessages();
+      timer = setTimeout(poll, pollIntervalRef.current);
+    };
+
+    // Start polling after initial load
+    const startTimer = setTimeout(() => poll(), pollIntervalRef.current);
+
+    // Adaptive interval check
+    const activityChecker = setInterval(() => {
+      const idle = Date.now() - lastActivityRef.current;
+      if (idle > 30000) pollIntervalRef.current = 10000;
+      else if (idle > 10000) pollIntervalRef.current = 5000;
+      else pollIntervalRef.current = 1000;
+    }, 5000);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(timer);
+      clearInterval(activityChecker);
+    };
+  }, [currentUserId]);
 
   const loadCurrentUser = async () => {
     const userStr = await AsyncStorage.getItem('user');
@@ -31,22 +70,14 @@ export default function ChatScreen({ route, navigation }) {
     setCurrentUserId(user.id);
   };
 
-  const loadMessages = async (silent = false) => {
-    if (!silent) setLoading(true);
-    
+  const loadMessages = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       const data = await api(`/api/messages/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(data.messages);
-      
-      // Scroll to bottom on first load
-      if (!silent && data.messages.length > 0) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: false });
-        }, 100);
-      }
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -54,76 +85,154 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
-  const handleSend = async () => {
-    if (!newMessage.trim() || sending) return;
-    
-    setSending(true);
-    const messageText = newMessage.trim();
-    setNewMessage('');
-    
+  const loadNewMessages = async () => {
+    if (!currentUserId || messages.length === 0) return;
+
     try {
       const token = await AsyncStorage.getItem('token');
-      await api('/api/messages', {
+      const lastMsg = messages[messages.length - 1];
+      const since = lastMsg?.created_at || '1970-01-01';
+
+      const data = await api(`/api/messages/${userId}/new?since=${encodeURIComponent(since)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (data.messages.length > 0) {
+        setMessages(prev => {
+          // Filter out temp messages that now have real IDs
+          const realIds = new Set(data.messages.map(m => m.id));
+          const filtered = prev.filter(m => !m.id.startsWith('temp-') || !realIds.has(m.id));
+          return [...filtered, ...data.messages];
+        });
+        setReactions(data.reactions || []);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    } catch (error) {
+      // Silent fail for polling
+    }
+  };
+
+  const pollStatus = async () => {
+    if (!currentUserId) return;
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const data = await api(`/api/messages/${userId}/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsTyping(data.is_typing);
+      setIsOnline(data.is_online);
+    } catch (error) {
+      // Silent fail
+    }
+  };
+
+  const sendTypingIndicator = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 3000) return;
+    lastTypingSentRef.current = now;
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await api(`/api/messages/${userId}/typing`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          to_user_id: userId,
-          text: messageText,
-        }),
       });
-      
-      // Reload messages
-      await loadMessages(true);
-      
-      // Scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
     } catch (error) {
+      // Silent fail
+    }
+  }, [userId]);
+
+  const handleTextChange = (text) => {
+    setNewMessage(text);
+    lastActivityRef.current = Date.now();
+    pollIntervalRef.current = 1000;
+    if (text.length > 0) sendTypingIndicator();
+  };
+
+  const handleSend = async () => {
+    if (!newMessage.trim() || sending) return;
+
+    setSending(true);
+    lastActivityRef.current = Date.now();
+    const messageText = newMessage.trim();
+    setNewMessage('');
+
+    // Optimistic UI - show message immediately
+    const tempId = 'temp-' + Date.now();
+    const optimisticMsg = {
+      id: tempId,
+      from_user_id: currentUserId,
+      to_user_id: userId,
+      text: messageText,
+      created_at: new Date().toISOString(),
+      status: 'sending',
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const data = await api('/api/messages', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ to_user_id: userId, text: messageText }),
+      });
+
+      // Replace temp message with real one
+      setMessages(prev => prev.map(m =>
+        m.id === tempId ? { ...data.message, status: 'sent' } : m
+      ));
+    } catch (error) {
+      // Mark as failed
+      setMessages(prev => prev.map(m =>
+        m.id === tempId ? { ...m, status: 'failed' } : m
+      ));
       console.error('Error sending message:', error);
-      // Restore message on error
-      setNewMessage(messageText);
     } finally {
       setSending(false);
     }
   };
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const handleReact = async (messageId, emoji) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await api(`/api/messages/${messageId}/react`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ emoji }),
+      });
+      // Optimistic reaction update
+      setReactions(prev => [
+        ...prev.filter(r => !(r.message_id === messageId && r.user_id === currentUserId)),
+        { id: 'temp', message_id: messageId, user_id: currentUserId, emoji },
+      ]);
+    } catch (error) {
+      console.error('Reaction error:', error);
+    }
   };
 
   const renderMessage = ({ item, index }) => {
     const isMe = item.from_user_id === currentUserId;
-    const showDate = index === 0 || 
+    const showDate = index === 0 ||
       new Date(item.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
-    
+
     return (
       <View>
         {showDate && (
           <View style={styles.dateDivider}>
             <Text style={styles.dateText}>
               {new Date(item.created_at).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
+                day: '2-digit', month: 'long', year: 'numeric'
               })}
             </Text>
           </View>
         )}
-        <View style={[styles.messageContainer, isMe && styles.messageContainerMe]}>
-          <View style={[styles.messageBubble, isMe && styles.messageBubbleMe]}>
-            <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
-              {item.text}
-            </Text>
-            <Text style={[styles.messageTime, isMe && styles.messageTimeMe]}>
-              {formatTime(item.created_at)}
-            </Text>
-          </View>
-        </View>
+        <MessageBubble
+          message={item}
+          isMe={isMe}
+          onReact={handleReact}
+          reactions={reactions}
+        />
       </View>
     );
   };
@@ -137,7 +246,7 @@ export default function ChatScreen({ route, navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -151,9 +260,7 @@ export default function ChatScreen({ route, navigation }) {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>👋</Text>
-            <Text style={styles.emptyText}>
-              Comece uma conversa com {userName}!
-            </Text>
+            <Text style={styles.emptyText}>Comece uma conversa com {userName}!</Text>
           </View>
         }
         onContentSizeChange={() => {
@@ -162,25 +269,27 @@ export default function ChatScreen({ route, navigation }) {
           }
         }}
       />
-      
+
+      {/* Typing indicator */}
+      {isTyping && <TypingIndicator userName={userName} />}
+
+      {/* Input */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           placeholder="Mensagem..."
           placeholderTextColor={theme.colors.textTertiary}
           value={newMessage}
-          onChangeText={setNewMessage}
+          onChangeText={handleTextChange}
           multiline
           maxLength={500}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
           onPress={handleSend}
           disabled={!newMessage.trim() || sending}
         >
-          <Text style={styles.sendButtonText}>
-            {sending ? '⏳' : '📤'}
-          </Text>
+          <Text style={styles.sendIcon}>➤</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -195,6 +304,16 @@ const styles = StyleSheet.create({
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  headerName: {
+    fontSize: theme.typography.h6,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.textPrimary,
   },
   loadingText: {
     color: theme.colors.textSecondary,
@@ -215,41 +334,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.md,
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    marginBottom: theme.spacing.sm,
-    justifyContent: 'flex-start',
-  },
-  messageContainerMe: {
-    justifyContent: 'flex-end',
-  },
-  messageBubble: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    maxWidth: '75%',
-    ...theme.shadows.sm,
-  },
-  messageBubbleMe: {
-    backgroundColor: theme.colors.primary,
-  },
-  messageText: {
-    fontSize: theme.typography.body,
-    color: theme.colors.textPrimary,
-    lineHeight: 20,
-  },
-  messageTextMe: {
-    color: theme.colors.textPrimary,
-  },
-  messageTime: {
-    fontSize: theme.typography.small,
-    color: theme.colors.textTertiary,
-    marginTop: 4,
-    alignSelf: 'flex-end',
-  },
-  messageTimeMe: {
-    color: theme.colors.textSecondary,
+    overflow: 'hidden',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -282,8 +367,9 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     opacity: 0.5,
   },
-  sendButtonText: {
+  sendIcon: {
     fontSize: 20,
+    color: theme.colors.textPrimary,
   },
   emptyContainer: {
     flex: 1,
