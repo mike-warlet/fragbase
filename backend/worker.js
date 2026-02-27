@@ -12,6 +12,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
          handleGetSimilarPerfumes, handleAddToWishlist, handleRemoveFromWishlist,
          handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
 import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory } from './sotd.js';
+import { handleGlobalSearch } from './search.js';
 
 // CORS headers
 const corsHeaders = {
@@ -125,6 +126,11 @@ export default {
         response = await handleGetTasteProfile(request, env, userId);
       }
       
+      // Global search
+      else if (path === '/api/search' && method === 'GET') {
+        response = await handleGlobalSearch(request, env);
+      }
+
       // Perfumes routes
       else if (path === '/api/perfumes/trending' && method === 'GET') {
         response = await handleGetTrendingPerfumes(request, env);

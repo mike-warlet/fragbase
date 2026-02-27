@@ -188,16 +188,8 @@ export async function handleLikePost(request, env, postId) {
   }
 }
 
-// Get comments for a post
+// Get comments for a post (public - no auth required)
 export async function handleGetComments(request, env, postId) {
-  const auth = await requireAuth(request, env);
-  if (auth.error) {
-    return new Response(JSON.stringify({ error: auth.error }), {
-      status: auth.status,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
   try {
     const { results } = await env.DB.prepare(
       `SELECT c.*, u.name as user_name, u.photo_url as user_photo
@@ -232,6 +224,13 @@ export async function handleCreateComment(request, env, postId) {
     const { text } = await request.json();
     if (!text || !text.trim()) {
       return new Response(JSON.stringify({ error: 'Comment text is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (text.length > 2000) {
+      return new Response(JSON.stringify({ error: 'Comment too long (max 2000 characters)' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });

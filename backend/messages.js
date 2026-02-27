@@ -110,6 +110,13 @@ export async function handleSendMessage(request, env) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    if (text.length > 5000) {
+      return new Response(JSON.stringify({ error: 'Message too long (max 5000 characters)' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     
     // Check if recipient exists
     const recipient = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(to_user_id).first();
