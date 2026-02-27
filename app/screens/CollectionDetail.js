@@ -13,7 +13,7 @@ import { colors, typography, spacing, borderRadius } from '../theme';
 import PerfumeCard from '../components/PerfumeCard';
 
 export default function CollectionDetail({ route, navigation }) {
-  const { collectionId } = route.params;
+  const { collectionId } = route.params || {};
   const [loading, setLoading] = useState(true);
   const [collection, setCollection] = useState(null);
 

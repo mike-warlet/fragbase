@@ -4,6 +4,7 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, useAuth } from './AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import { colors } from './theme';
 
 // Screens
@@ -214,8 +215,10 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppNavigator />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

@@ -62,10 +62,12 @@ export default function EditProfile({ navigation }) {
     if (!selectedImage) return null;
 
     const formData = new FormData();
+    const ext = selectedImage.uri.split('.').pop()?.toLowerCase() || 'jpg';
+    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
     formData.append('image', {
       uri: selectedImage.uri,
-      type: 'image/jpeg',
-      name: 'profile.jpg',
+      type: selectedImage.type || mimeType,
+      name: `profile.${ext}`,
     });
     formData.append('type', 'profile');
 

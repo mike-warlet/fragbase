@@ -13,7 +13,7 @@ import { colors, typography, spacing, borderRadius } from '../theme';
 import RatingStars from '../components/RatingStars';
 
 export default function CreateReviewScreen({ route, navigation }) {
-  const { perfumeId, perfumeName } = route.params;
+  const { perfumeId, perfumeName } = route.params || {};
   
   const [rating, setRating] = useState(0);
   const [longevity, setLongevity] = useState(0);
