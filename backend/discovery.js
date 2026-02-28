@@ -335,10 +335,12 @@ function computeProfileFromAnswers(answers) {
 }
 
 async function generateRecommendations(env, userId, profile) {
-  // Get all perfumes
+  // Get all perfumes (accords from column or aggregated from perfume_accords table)
   const { results: perfumes } = await env.DB.prepare(
-    `SELECT id, name, brand, accords, notes_top, notes_heart, notes_base, gender, concentration, year
-     FROM perfumes LIMIT 1000`
+    `SELECT p.id, p.name, p.brand,
+            COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords,
+            p.notes_top, p.notes_heart, p.notes_base, p.gender, p.concentration, p.year
+     FROM perfumes p LIMIT 1000`
   ).all();
 
   // Get user's owned/tried perfumes to exclude
@@ -528,7 +530,7 @@ export async function handleGetRecommendations(request, env) {
 
     const { results } = await env.DB.prepare(
       `SELECT r.perfume_id, r.score, r.reason,
-              p.name, p.brand, p.image_url, p.accords, p.gender, p.year, p.concentration,
+              p.name, p.brand, p.image_url, COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords, p.gender, p.year, p.concentration,
               (SELECT ROUND(AVG(rv.rating), 1) FROM reviews rv WHERE rv.perfume_id = p.id) as avg_rating,
               (SELECT COUNT(*) FROM reviews rv WHERE rv.perfume_id = p.id) as review_count
        FROM recommendations r
@@ -568,7 +570,7 @@ export async function handleExplore(request, env) {
     // Section 1: Top Recommendations (from quiz)
     const { results: topRecs } = await env.DB.prepare(
       `SELECT r.perfume_id, r.score, r.reason,
-              p.name, p.brand, p.image_url, p.accords, p.gender, p.year,
+              p.name, p.brand, p.image_url, COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords, p.gender, p.year,
               (SELECT ROUND(AVG(rv.rating), 1) FROM reviews rv WHERE rv.perfume_id = p.id) as avg_rating
        FROM recommendations r
        JOIN perfumes p ON r.perfume_id = p.id
@@ -595,11 +597,13 @@ export async function handleExplore(request, env) {
       const familyAccords = FAMILY_ACCORDS[topFamily] || [];
 
       if (familyAccords.length > 0) {
-        const likeConds = familyAccords.map(() => 'LOWER(p.accords) LIKE ?').join(' OR ');
+        const likeConds = familyAccords.map(() => 'LOWER(COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id))) LIKE ?').join(' OR ');
         const likeParams = familyAccords.map(a => `%${a}%`);
 
         const { results: familyPerfumes } = await env.DB.prepare(
-          `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, p.accords, p.gender, p.year,
+          `SELECT p.id as perfume_id, p.name, p.brand, p.image_url,
+                  COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords,
+                  p.gender, p.year,
                   (SELECT ROUND(AVG(rv.rating), 1) FROM reviews rv WHERE rv.perfume_id = p.id) as avg_rating,
                   (SELECT COUNT(*) FROM reviews rv WHERE rv.perfume_id = p.id) as review_count
            FROM perfumes p
@@ -621,7 +625,7 @@ export async function handleExplore(request, env) {
 
     // Section 3: Trending (most reviewed recently)
     const { results: trending } = await env.DB.prepare(
-      `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, p.accords, p.gender, p.year,
+      `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords, p.gender, p.year,
               ROUND(AVG(rv.rating), 1) as avg_rating,
               COUNT(rv.id) as review_count
        FROM perfumes p
@@ -642,7 +646,7 @@ export async function handleExplore(request, env) {
 
     // Section 4: Hidden Gems (high rating, few reviews)
     const { results: gems } = await env.DB.prepare(
-      `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, p.accords, p.gender, p.year,
+      `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords, p.gender, p.year,
               ROUND(AVG(rv.rating), 1) as avg_rating,
               COUNT(rv.id) as review_count
        FROM perfumes p
@@ -664,7 +668,7 @@ export async function handleExplore(request, env) {
 
     // Section 5: New Arrivals
     const { results: newArrivals } = await env.DB.prepare(
-      `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, p.accords, p.gender, p.year,
+      `SELECT p.id as perfume_id, p.name, p.brand, p.image_url, COALESCE(p.accords, (SELECT GROUP_CONCAT(pa.accord_name) FROM perfume_accords pa WHERE pa.perfume_id = p.id)) as accords, p.gender, p.year,
               (SELECT ROUND(AVG(rv.rating), 1) FROM reviews rv WHERE rv.perfume_id = p.id) as avg_rating
        FROM perfumes p
        ORDER BY p.created_at DESC
