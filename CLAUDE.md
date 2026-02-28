@@ -289,32 +289,58 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
   - 500+ perfumes seeded (designer + niche, 50+ brands)
   - Deploy script (`backend/deploy.sh`)
 
+- **Sprint 8:** Competitor Features & Performance — COMPLETO
+  - Statements (micro-reviews, 280 chars, tags, voting)
+  - Perfumer/Nose profiles (15 seeded, lineage tracking)
+  - "If You Like X, Try Y" user recommendations with voting
+  - Backend caching (Cache-Control headers, ETags)
+  - Frontend cache layer (in-memory with TTL)
+  - React.memo on PerfumeCard, ReviewCard
+  - useCallback on all FlatList renderItems
+  - Debounce on Compare search
+  - Messages polling reduced 10s -> 30s
+
 ### Deploy:
-- Worker deployed em 27/02/2026 com FASE 2
-- **Pendente redeploy** com Sprint 3-7 (migrations 003-013, all new routes)
+- Worker deployed em 28/02/2026 com Sprint 1-8 completo (migrations 001-017)
 - Deploy script disponível: `cd backend && bash deploy.sh`
+- GitHub: All commits pushed, up to date with origin/main
 
-## Próximos Passos
-
-1. **Redeploy backend** — correr `backend/deploy.sh` da máquina local (VM proxy bloqueia CF API)
-2. Push para GitHub
-3. Testes em dispositivos reais
-4. Criar assets reais (icon, splash) — substituir placeholders
-5. EAS Build para TestFlight/Internal Testing
-6. Frontend screens para Discovery Engine (quiz, recommendations, explore)
-7. Frontend screens para Gamification (badges, leaderboard, XP)
-8. Integrar WebSocket no Chat.js existente
-9. Ingestão de mais dados (reviews, accords seed)
-10. Performance optimization & caching
+### New Endpoints (Sprint 8):
+- `GET/POST /api/perfumes/:id/statements` — Micro-reviews
+- `POST /api/statements/:id/vote` — Vote on statement
+- `GET /api/perfumers` — List perfumers
+- `GET /api/perfumers/:id` — Perfumer detail + fragrances
+- `GET /api/perfumes/:id/noses` — Perfumers for a perfume
+- `POST /api/perfumers/link` — Link perfumer to perfume
+- `GET/POST /api/perfumes/:id/recommendations` — User recs
+- `POST /api/recommendations/:id/vote` — Vote on rec
 
 ## Notas Importantes
 
-- O `wrangler.toml` local tinha o R2 comentado — foi adicionado via `echo >> wrangler.toml` durante deploy
-- JWT_SECRET foi configurado via dashboard Settings (já existia de deploy anterior)
-- O proxy da VM Cowork bloqueia `api.cloudflare.com` — deploys devem ser feitos da máquina do user
+- JWT_SECRET foi configurado via dashboard Settings
 - O app frontend precisa de `cd app && npm install && npx expo start` para rodar
-- Commits locais: ~30+ commits não pushed para GitHub
+- GitHub token configurado no remote URL para push automático
+- Assets: icon.png (1024x1024), splash.png (1284x2778) - prontos para store
+- EAS: eas.json configurado, faltam credenciais Apple/Google no submit section
+
+## Competitor Intelligence Summary
+
+Features implementadas que concorrentes NAO tem:
+- Gamification (34 badges, XP, levels) - Fragrantica/Parfumo nao tem
+- Weather smart picks - unico
+- Taste twins / affinity matching - unico
+- Real-time WebSocket chat - unico
+- Layering suggestions - unico
+- Batch code checker - unico
+- Weekly challenges - unico
+
+Features futuras recomendadas (por prioridade):
+1. Scent Compass / Visual Map (Parfumo tem) - Medium effort
+2. SOTD Calendar View (Parfumo tem) - Easy
+3. Ingredient Encyclopedia (Fragrantica tem) - Easy-Medium
+4. Collection Analytics (Parfumo tem) - Easy-Medium
+5. Price Tracking & Alerts (Parfumo/Sniff tem) - Hard
 
 ---
-*Última atualização: 28/02/2026*
-*Sprint 7 completado: Discovery Engine, Gamification, Push Notifications, WebSocket, 500+ Perfumes*
+*Ultima atualizacao: 28/02/2026*
+*Sprint 8 completado: Statements, Perfumer Profiles, User Recommendations, Performance Optimizations*
