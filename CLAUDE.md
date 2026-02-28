@@ -36,6 +36,7 @@ MVP em desenvolvimento ativo.
 |------|------|-------|
 | D1 Database | `DB` | fragbase |
 | R2 Bucket | `IMAGES` | fragbase-images |
+| Durable Object | `CHAT_ROOMS` | ChatRoom (WebSocket) |
 | Secret | `JWT_SECRET` | (encrypted) |
 
 ## Estrutura de Ficheiros
@@ -47,6 +48,8 @@ fragbase/
 │   ├── AuthContext.js       # Global auth state (login/logout/refreshUser)
 │   ├── config.js            # API_URL + apiCall/apiUpload helpers
 │   ├── theme.js             # Design system (colors, typography, spacing)
+│   ├── PushNotificationManager.js # Expo push notifications hook
+│   ├── useWebSocket.js      # WebSocket hook for real-time chat
 │   ├── app.json             # Expo config (icon, splash, permissions)
 │   ├── eas.json             # EAS Build config (dev/preview/production)
 │   ├── assets/              # App icon, splash screen, favicon
@@ -101,6 +104,11 @@ fragbase/
 │   ├── layering.js         # Layering suggestions + voting
 │   ├── search.js           # Busca global + avançada
 │   ├── images.js           # Upload/serve/delete via R2
+│   ├── discovery.js         # Scent quiz + recommendations engine
+│   ├── gamification.js      # Badges, XP, levels, achievements
+│   ├── notifications.js     # Push notifications (Expo Push API)
+│   ├── chatroom.js          # Durable Object for WebSocket chat
+│   ├── deploy.sh            # Deploy script (migrations + worker)
 │   ├── wrangler.toml       # Config do Worker
 │   └── migrations/
 │       ├── 002-add-username.sql
@@ -109,15 +117,20 @@ fragbase/
 │       ├── 005-seed-perfumes.sql  # 50 perfumes seed data
 │       ├── 006-sotd.sql           # SOTD table + posts type column
 │       ├── 007-diary-fields.sql   # Add occasion/mood/weather to SOTD
-│       └── 008-layering.sql       # Layering combos + votes tables
+│       ├── 008-layering.sql       # Layering combos + votes tables
+│       ├── 009-challenges.sql     # Weekly challenges + badges + voting
+│       ├── 010-seed-500-perfumes.sql # 450+ additional perfumes (total 500+)
+│       ├── 011-discovery.sql      # Quiz responses + scent profiles + recommendations
+│       ├── 012-gamification.sql   # Badges, XP, levels, user stats (34 badges seeded)
+│       └── 013-push-tokens.sql    # Push tokens + notification preferences
 └── FRAGBASE-PLANO.md       # Roadmap completo
 ```
 
 ## Tabelas D1
 
-users, perfumes, reviews, posts, likes, follows, collections, collections_perfumes, messages, post_likes, comments, perfume_accords, accord_votes, note_votes, performance_votes, season_votes, wishlists, typing_status, message_reactions, sotd, layering_combos, layering_votes
+users, perfumes, reviews, posts, likes, follows, collections, collections_perfumes, messages, post_likes, comments, perfume_accords, accord_votes, note_votes, performance_votes, season_votes, wishlists, typing_status, message_reactions, sotd, layering_combos, layering_votes, challenges, challenge_entries, challenge_votes, user_badges, quiz_responses, user_scent_profile, recommendations, badges, user_badges_v2, user_xp, xp_transactions, user_stats, push_tokens, notification_preferences
 
-## API Endpoints (~70 rotas)
+## API Endpoints (~100 rotas)
 
 ### Auth
 - `POST /api/auth/register` — Cadastro
@@ -209,6 +222,30 @@ users, perfumes, reviews, posts, likes, follows, collections, collections_perfum
 - `POST /api/messages/:id/react` — Reação a mensagem
 - `DELETE /api/messages/:id/react` — Remover reação
 
+### Discovery Engine
+- `GET /api/discovery/quiz` — Quiz questions (12 questions)
+- `POST /api/discovery/quiz` — Submit quiz, compute scent profile
+- `GET /api/discovery/profile` — User's computed scent profile
+- `GET /api/discovery/recommendations` — Personalized recommendations
+- `GET /api/discovery/explore` — Curated discovery sections
+
+### Gamification
+- `GET /api/gamification/badges` — All badges (with earned status)
+- `GET /api/gamification/badges/:userId` — User's earned badges
+- `GET /api/gamification/level/:userId` — User XP and level
+- `GET /api/gamification/leaderboard` — Top users by XP
+- `GET /api/gamification/stats` — Current user's stats
+- `POST /api/gamification/check` — Trigger badge check
+
+### Push Notifications
+- `POST /api/push/register` — Register push token
+- `DELETE /api/push/register` — Unregister push token
+- `GET /api/push/preferences` — Get notification preferences
+- `PUT /api/push/preferences` — Update preferences
+
+### WebSocket (Real-time Chat)
+- `WS /api/ws/:roomId` — WebSocket connection for real-time messaging
+
 ### Images
 - `POST /api/images/upload` — Upload
 - `GET /images/:filename` — Serve imagem
@@ -238,27 +275,32 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
 - **Sprint 3:** Social (feed, likes, comments, notificações) — COMPLETO
 - **Sprint 4:** Data & Polish (seed, SOTD, Expo config, EAS) — COMPLETO
 - **Sprint 5:** Launch Prep (audit, bug fixes) — COMPLETO
-- **Sprint 6:** New Features (comparison, diary, layering) — COMPLETO
+- **Sprint 6:** New Features (comparison, diary, layering, challenges, taste twins) — COMPLETO
+- **Sprint 7:** Platform Features — COMPLETO
+  - Discovery Engine (scent quiz + 12 questions + recommendation algorithm)
+  - Gamification (34 badges, XP levels, leaderboard, achievement tracking)
+  - Push Notifications (Expo Push API, preferences, token management)
+  - WebSocket Real-time Chat (Durable Objects, typing, online status)
+  - 500+ perfumes seeded (designer + niche, 50+ brands)
+  - Deploy script (`backend/deploy.sh`)
 
-### Deploy realizado em 27/02/2026:
-- Worker deployed com endpoints da FASE 2
-- D1 com tabelas base (migrations 002+)
-- R2 ativado com bucket `fragbase-images`
-- JWT_SECRET configurado como secret
-- **Pendente redeploy** com Sprint 3-4 (novos endpoints, migrations 003-006)
+### Deploy:
+- Worker deployed em 27/02/2026 com FASE 2
+- **Pendente redeploy** com Sprint 3-7 (migrations 003-013, all new routes)
+- Deploy script disponível: `cd backend && bash deploy.sh`
 
 ## Próximos Passos
 
-1. **Redeploy backend** com todas as novas rotas e migrations (003-008)
+1. **Redeploy backend** — correr `backend/deploy.sh` da máquina local (VM proxy bloqueia CF API)
 2. Push para GitHub
 3. Testes em dispositivos reais
 4. Criar assets reais (icon, splash) — substituir placeholders
 5. EAS Build para TestFlight/Internal Testing
-6. WebSocket via Durable Objects para messaging real-time
-7. Push notifications (Expo Push)
-8. Ingestão de mais dados de perfumes (500+ para MVP)
-9. Advanced Discovery Engine (scent quiz, recommendations)
-10. Gamification system (badges, levels, achievements)
+6. Frontend screens para Discovery Engine (quiz, recommendations, explore)
+7. Frontend screens para Gamification (badges, leaderboard, XP)
+8. Integrar WebSocket no Chat.js existente
+9. Ingestão de mais dados (reviews, accords seed)
+10. Performance optimization & caching
 
 ## Notas Importantes
 
@@ -269,5 +311,5 @@ Stack screens acessíveis via `navigation.getParent()?.navigate()`
 - Commits locais: ~30+ commits não pushed para GitHub
 
 ---
-*Última atualização: 27/02/2026*
-*Sprint 6 completado: Comparison Tool, Fragrance Diary, Layering Suggestions*
+*Última atualização: 28/02/2026*
+*Sprint 7 completado: Discovery Engine, Gamification, Push Notifications, WebSocket, 500+ Perfumes*

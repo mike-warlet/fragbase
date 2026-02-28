@@ -16,6 +16,10 @@ import { handleGlobalSearch } from './search.js';
 import { handleGetChallenges, handleGetChallenge, handleSubmitEntry, handleVoteEntry, handleGetUserBadges } from './challenges.js';
 import { handleGetTasteTwins, handleGetTasteMatch } from './taste.js';
 import { handleGetLayeringSuggestions, handleCreateLayeringSuggestion, handleVoteLayeringCombo, handleGetTopLayeringCombos } from './layering.js';
+import { handleGetAllBadges, handleGetUserBadgesV2, handleGetUserLevel, handleGetLeaderboard, handleGetMyStats, handleCheckBadges } from './gamification.js';
+import { handleGetQuiz, handleSubmitQuiz, handleGetProfile, handleGetRecommendations, handleExplore } from './discovery.js';
+import { handleRegisterPushToken, handleUnregisterPushToken, handleGetPushPreferences, handleUpdatePushPreferences } from './notifications.js';
+export { ChatRoom } from './chatroom.js';
 
 // CORS headers
 const corsHeaders = {
@@ -168,6 +172,28 @@ export default {
       else if (path.match(/^\/api\/users\/([^\/]+)\/badges$/) && method === 'GET') {
         const userId = path.match(/^\/api\/users\/([^\/]+)\/badges$/)[1];
         response = await handleGetUserBadges(request, env, userId);
+      }
+
+      // Gamification routes
+      else if (path === '/api/gamification/badges' && method === 'GET') {
+        response = await handleGetAllBadges(request, env);
+      }
+      else if (path === '/api/gamification/leaderboard' && method === 'GET') {
+        response = await handleGetLeaderboard(request, env);
+      }
+      else if (path === '/api/gamification/stats' && method === 'GET') {
+        response = await handleGetMyStats(request, env);
+      }
+      else if (path === '/api/gamification/check' && method === 'POST') {
+        response = await handleCheckBadges(request, env);
+      }
+      else if (path.match(/^\/api\/gamification\/badges\/([^\/]+)$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/gamification\/badges\/([^\/]+)$/)[1];
+        response = await handleGetUserBadgesV2(request, env, userId);
+      }
+      else if (path.match(/^\/api\/gamification\/level\/([^\/]+)$/) && method === 'GET') {
+        const userId = path.match(/^\/api\/gamification\/level\/([^\/]+)$/)[1];
+        response = await handleGetUserLevel(request, env, userId);
       }
 
       // Layering routes
@@ -383,6 +409,45 @@ export default {
         response = await handleRemovePerfumeFromCollection(request, env, collectionId, perfumeId);
       }
       
+      // Discovery Engine routes
+      else if (path === '/api/discovery/quiz' && method === 'GET') {
+        response = await handleGetQuiz(request, env);
+      }
+      else if (path === '/api/discovery/quiz' && method === 'POST') {
+        response = await handleSubmitQuiz(request, env);
+      }
+      else if (path === '/api/discovery/profile' && method === 'GET') {
+        response = await handleGetProfile(request, env);
+      }
+      else if (path === '/api/discovery/recommendations' && method === 'GET') {
+        response = await handleGetRecommendations(request, env);
+      }
+      else if (path === '/api/discovery/explore' && method === 'GET') {
+        response = await handleExplore(request, env);
+      }
+
+      // Push Notification routes
+      else if (path === '/api/push/register' && method === 'POST') {
+        response = await handleRegisterPushToken(request, env);
+      }
+      else if (path === '/api/push/register' && method === 'DELETE') {
+        response = await handleUnregisterPushToken(request, env);
+      }
+      else if (path === '/api/push/preferences' && method === 'GET') {
+        response = await handleGetPushPreferences(request, env);
+      }
+      else if (path === '/api/push/preferences' && method === 'PUT') {
+        response = await handleUpdatePushPreferences(request, env);
+      }
+
+      // WebSocket route for real-time chat
+      else if (path.match(/^\/api\/ws\/([^\/]+)$/) && request.headers.get('Upgrade') === 'websocket') {
+        const roomId = path.match(/^\/api\/ws\/([^\/]+)$/)[1];
+        const durableId = env.CHAT_ROOMS.idFromName(roomId);
+        const stub = env.CHAT_ROOMS.get(durableId);
+        return stub.fetch(new Request('https://dummy/websocket' + '?' + url.search.slice(1), request));
+      }
+
       // 404
       else {
         response = new Response(JSON.stringify({ error: 'Route not found' }), {

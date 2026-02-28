@@ -21,3 +21,13 @@ zone_id = ""
 [[r2_buckets]]
 binding = "IMAGES"
 bucket_name = "fragbase-images"
+
+# Durable Objects for WebSocket real-time messaging
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOMS", class_name = "ChatRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]
