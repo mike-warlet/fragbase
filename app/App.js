@@ -41,6 +41,7 @@ import MarketplaceScreen from './screens/Marketplace';
 import CreateListingScreen from './screens/CreateListing';
 import ListingDetailScreen from './screens/ListingDetail';
 import BarcodeScannerScreen from './screens/BarcodeScanner';
+import BatchCheckScreen from './screens/BatchCheck';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -267,6 +268,11 @@ function MainStack() {
         name="BarcodeScanner"
         component={BarcodeScannerScreen}
         options={{ title: 'Scanner' }}
+      />
+      <Stack.Screen
+        name="BatchCheck"
+        component={BatchCheckScreen}
+        options={{ title: 'Batch Code' }}
       />
     </Stack.Navigator>
   );

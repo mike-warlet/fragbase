@@ -20,6 +20,8 @@ import { handleGetAllBadges, handleGetUserBadgesV2, handleGetUserLevel, handleGe
 import { handleGetQuiz, handleSubmitQuiz, handleGetProfile, handleGetRecommendations, handleExplore } from './discovery.js';
 import { handleRegisterPushToken, handleUnregisterPushToken, handleGetPushPreferences, handleUpdatePushPreferences } from './notifications.js';
 import { handleGetListings, handleGetListing, handleCreateListing, handleUpdateListing, handleDeleteListing, handleCreateOffer, handleGetMyListings, handleGetOffers } from './marketplace.js';
+import { handleSmartPick } from './smartpick.js';
+import { handleBatchCheck, handleBatchReport } from './batchcheck.js';
 export { ChatRoom } from './chatroom.js';
 
 // CORS headers
@@ -439,6 +441,19 @@ export default {
       }
       else if (path === '/api/push/preferences' && method === 'PUT') {
         response = await handleUpdatePushPreferences(request, env);
+      }
+
+      // Smart Pick
+      else if (path === '/api/smart-pick' && method === 'GET') {
+        response = await handleSmartPick(request, env);
+      }
+
+      // Batch Code Checker
+      else if (path === '/api/batch-check' && method === 'POST') {
+        response = await handleBatchCheck(request, env);
+      }
+      else if (path === '/api/batch-report' && method === 'POST') {
+        response = await handleBatchReport(request, env);
       }
 
       // Marketplace routes

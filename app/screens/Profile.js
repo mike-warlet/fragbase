@@ -191,6 +191,15 @@ export default function Profile({ navigation }) {
 
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('BatchCheck')}
+        >
+          <Text style={styles.menuIcon}>🔍</Text>
+          <Text style={styles.menuText}>Verificar Batch Code</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
         >
           <Text style={styles.menuIcon}>👤</Text>

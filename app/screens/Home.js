@@ -6,6 +6,7 @@ import {
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 import SOTDBanner from '../components/SOTDBanner';
+import SmartPickCard from '../components/SmartPickCard';
 
 export default function HomeScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
@@ -243,7 +244,7 @@ export default function HomeScreen({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={<SOTDBanner navigation={navigation} />}
+        ListHeaderComponent={<><SmartPickCard navigation={navigation} /><SOTDBanner navigation={navigation} /></>}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
