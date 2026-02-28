@@ -22,6 +22,9 @@ import { handleRegisterPushToken, handleUnregisterPushToken, handleGetPushPrefer
 import { handleGetListings, handleGetListing, handleCreateListing, handleUpdateListing, handleDeleteListing, handleCreateOffer, handleGetMyListings, handleGetOffers } from './marketplace.js';
 import { handleSmartPick } from './smartpick.js';
 import { handleBatchCheck, handleBatchReport } from './batchcheck.js';
+import { handleGetStatements, handleCreateStatement, handleVoteStatement } from './statements.js';
+import { handleGetPerfumers, handleGetPerfumer, handleGetPerfumeNoses, handleLinkPerfumer } from './perfumers.js';
+import { handleGetRecommendations as handleGetUserRecs, handleCreateRecommendation, handleVoteRecommendation } from './recommendations.js';
 export { ChatRoom } from './chatroom.js';
 
 // CORS headers
@@ -485,6 +488,50 @@ export default {
       else if (path.match(/^\/api\/marketplace\/([^\/]+)$/) && method === 'DELETE') {
         const listingId = path.match(/^\/api\/marketplace\/([^\/]+)$/)[1];
         response = await handleDeleteListing(request, env, listingId);
+      }
+
+      // Statements (micro-reviews) routes
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/statements$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/statements$/)[1];
+        response = await handleGetStatements(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/statements$/) && method === 'POST') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/statements$/)[1];
+        response = await handleCreateStatement(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/statements\/([^\/]+)\/vote$/) && method === 'POST') {
+        const statementId = path.match(/^\/api\/statements\/([^\/]+)\/vote$/)[1];
+        response = await handleVoteStatement(request, env, statementId);
+      }
+
+      // Perfumer (Nose) routes
+      else if (path === '/api/perfumers' && method === 'GET') {
+        response = await handleGetPerfumers(request, env);
+      }
+      else if (path === '/api/perfumers/link' && method === 'POST') {
+        response = await handleLinkPerfumer(request, env);
+      }
+      else if (path.match(/^\/api\/perfumers\/([^\/]+)$/) && method === 'GET') {
+        const perfumerId = path.match(/^\/api\/perfumers\/([^\/]+)$/)[1];
+        response = await handleGetPerfumer(request, env, perfumerId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/noses$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/noses$/)[1];
+        response = await handleGetPerfumeNoses(request, env, perfumeId);
+      }
+
+      // User recommendations ("If you like X, try Y")
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/recommendations$/) && method === 'GET') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/recommendations$/)[1];
+        response = await handleGetUserRecs(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/perfumes\/([^\/]+)\/recommendations$/) && method === 'POST') {
+        const perfumeId = path.match(/^\/api\/perfumes\/([^\/]+)\/recommendations$/)[1];
+        response = await handleCreateRecommendation(request, env, perfumeId);
+      }
+      else if (path.match(/^\/api\/recommendations\/([^\/]+)\/vote$/) && method === 'POST') {
+        const recId = path.match(/^\/api\/recommendations\/([^\/]+)\/vote$/)[1];
+        response = await handleVoteRecommendation(request, env, recId);
       }
 
       // WebSocket route for real-time chat

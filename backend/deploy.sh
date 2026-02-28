@@ -43,6 +43,7 @@ MIGRATIONS=(
     "014-perfume-accords-column.sql"
     "015-marketplace.sql"
     "016-barcode.sql"
+    "017-statements-perfumers-recs.sql"
 )
 
 for migration in "${MIGRATIONS[@]}"; do
