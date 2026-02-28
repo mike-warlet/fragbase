@@ -173,6 +173,24 @@ export default function Profile({ navigation }) {
 
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('Marketplace')}
+        >
+          <Text style={styles.menuIcon}>🛒</Text>
+          <Text style={styles.menuText}>Marketplace</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('BarcodeScanner')}
+        >
+          <Text style={styles.menuIcon}>📷</Text>
+          <Text style={styles.menuText}>Scanner de Código</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
         >
           <Text style={styles.menuIcon}>👤</Text>

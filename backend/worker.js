@@ -19,6 +19,7 @@ import { handleGetLayeringSuggestions, handleCreateLayeringSuggestion, handleVot
 import { handleGetAllBadges, handleGetUserBadgesV2, handleGetUserLevel, handleGetLeaderboard, handleGetMyStats, handleCheckBadges } from './gamification.js';
 import { handleGetQuiz, handleSubmitQuiz, handleGetProfile, handleGetRecommendations, handleExplore } from './discovery.js';
 import { handleRegisterPushToken, handleUnregisterPushToken, handleGetPushPreferences, handleUpdatePushPreferences } from './notifications.js';
+import { handleGetListings, handleGetListing, handleCreateListing, handleUpdateListing, handleDeleteListing, handleCreateOffer, handleGetMyListings, handleGetOffers } from './marketplace.js';
 export { ChatRoom } from './chatroom.js';
 
 // CORS headers
@@ -438,6 +439,37 @@ export default {
       }
       else if (path === '/api/push/preferences' && method === 'PUT') {
         response = await handleUpdatePushPreferences(request, env);
+      }
+
+      // Marketplace routes
+      else if (path === '/api/marketplace/my' && method === 'GET') {
+        response = await handleGetMyListings(request, env);
+      }
+      else if (path === '/api/marketplace' && method === 'GET') {
+        response = await handleGetListings(request, env);
+      }
+      else if (path === '/api/marketplace' && method === 'POST') {
+        response = await handleCreateListing(request, env);
+      }
+      else if (path.match(/^\/api\/marketplace\/([^\/]+)\/offer$/) && method === 'POST') {
+        const listingId = path.match(/^\/api\/marketplace\/([^\/]+)\/offer$/)[1];
+        response = await handleCreateOffer(request, env, listingId);
+      }
+      else if (path.match(/^\/api\/marketplace\/([^\/]+)\/offers$/) && method === 'GET') {
+        const listingId = path.match(/^\/api\/marketplace\/([^\/]+)\/offers$/)[1];
+        response = await handleGetOffers(request, env, listingId);
+      }
+      else if (path.match(/^\/api\/marketplace\/([^\/]+)$/) && method === 'GET') {
+        const listingId = path.match(/^\/api\/marketplace\/([^\/]+)$/)[1];
+        response = await handleGetListing(request, env, listingId);
+      }
+      else if (path.match(/^\/api\/marketplace\/([^\/]+)$/) && method === 'PUT') {
+        const listingId = path.match(/^\/api\/marketplace\/([^\/]+)$/)[1];
+        response = await handleUpdateListing(request, env, listingId);
+      }
+      else if (path.match(/^\/api\/marketplace\/([^\/]+)$/) && method === 'DELETE') {
+        const listingId = path.match(/^\/api\/marketplace\/([^\/]+)$/)[1];
+        response = await handleDeleteListing(request, env, listingId);
       }
 
       // WebSocket route for real-time chat

@@ -37,6 +37,10 @@ import RecommendationsScreen from './screens/Recommendations';
 import ExploreScreen from './screens/Explore';
 import BadgesScreen from './screens/Badges';
 import LeaderboardScreen from './screens/Leaderboard';
+import MarketplaceScreen from './screens/Marketplace';
+import CreateListingScreen from './screens/CreateListing';
+import ListingDetailScreen from './screens/ListingDetail';
+import BarcodeScannerScreen from './screens/BarcodeScanner';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -243,6 +247,26 @@ function MainStack() {
         name="Leaderboard"
         component={LeaderboardScreen}
         options={{ title: 'Leaderboard' }}
+      />
+      <Stack.Screen
+        name="Marketplace"
+        component={MarketplaceScreen}
+        options={{ title: 'Marketplace' }}
+      />
+      <Stack.Screen
+        name="CreateListing"
+        component={CreateListingScreen}
+        options={{ title: 'Novo Anúncio' }}
+      />
+      <Stack.Screen
+        name="ListingDetail"
+        component={ListingDetailScreen}
+        options={{ title: 'Anúncio' }}
+      />
+      <Stack.Screen
+        name="BarcodeScanner"
+        component={BarcodeScannerScreen}
+        options={{ title: 'Scanner' }}
       />
     </Stack.Navigator>
   );

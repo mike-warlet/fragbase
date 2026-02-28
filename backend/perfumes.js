@@ -5,15 +5,19 @@ import { requireAuth } from './auth.js';
 export async function handleListPerfumes(request, env) {
   try {
     const url = new URL(request.url);
-    const search = url.searchParams.get('q') || '';
+    const search = url.searchParams.get('q') || url.searchParams.get('search') || '';
+    const barcode = url.searchParams.get('barcode');
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
     const offset = (page - 1) * limit;
-    
+
     let query = 'SELECT id, name, brand, year, type, image_url FROM perfumes';
     let params = [];
-    
-    if (search) {
+
+    if (barcode) {
+      query += ' WHERE barcode = ?';
+      params = [barcode];
+    } else if (search) {
       query += ' WHERE name LIKE ? OR brand LIKE ?';
       params = [`%${search}%`, `%${search}%`];
     }
