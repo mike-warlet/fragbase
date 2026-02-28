@@ -110,6 +110,33 @@ export default function Profile({ navigation }) {
       <View style={styles.menu}>
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('Explore')}
+        >
+          <Text style={styles.menuIcon}>🔮</Text>
+          <Text style={styles.menuText}>Descobrir</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Badges')}
+        >
+          <Text style={styles.menuIcon}>🏅</Text>
+          <Text style={styles.menuText}>Badges & XP</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Leaderboard')}
+        >
+          <Text style={styles.menuIcon}>🏆</Text>
+          <Text style={styles.menuText}>Leaderboard</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('Collections')}
         >
           <Text style={styles.menuIcon}>📚</Text>

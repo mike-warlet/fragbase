@@ -32,6 +32,11 @@ import FragranceDiaryScreen from './screens/FragranceDiary';
 import ChallengesScreen from './screens/Challenges';
 import ChallengeDetailScreen from './screens/ChallengeDetail';
 import TasteTwinsScreen from './screens/TasteTwins';
+import ScentQuizScreen from './screens/ScentQuiz';
+import RecommendationsScreen from './screens/Recommendations';
+import ExploreScreen from './screens/Explore';
+import BadgesScreen from './screens/Badges';
+import LeaderboardScreen from './screens/Leaderboard';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -213,6 +218,31 @@ function MainStack() {
         name="TasteTwins"
         component={TasteTwinsScreen}
         options={{ title: 'Taste Twins' }}
+      />
+      <Stack.Screen
+        name="ScentQuiz"
+        component={ScentQuizScreen}
+        options={{ title: 'Quiz Olfativo' }}
+      />
+      <Stack.Screen
+        name="Recommendations"
+        component={RecommendationsScreen}
+        options={{ title: 'Recomendacoes' }}
+      />
+      <Stack.Screen
+        name="Explore"
+        component={ExploreScreen}
+        options={{ title: 'Descobrir' }}
+      />
+      <Stack.Screen
+        name="Badges"
+        component={BadgesScreen}
+        options={{ title: 'Badges & XP' }}
+      />
+      <Stack.Screen
+        name="Leaderboard"
+        component={LeaderboardScreen}
+        options={{ title: 'Leaderboard' }}
       />
     </Stack.Navigator>
   );

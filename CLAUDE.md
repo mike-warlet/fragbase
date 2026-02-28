@@ -89,7 +89,12 @@ fragbase/
 │       ├── SOTDPicker.js    # Selecionar perfume do dia (+ mood/occasion/weather)
 │       ├── FragranceDiary.js # Calendar view + wear stats
 │       ├── Compare.js       # Side-by-side perfume comparison
-│       └── Chat.js          # Chat individual (reactions, typing)
+│       ├── Chat.js          # Chat individual (WebSocket + reactions, typing)
+│       ├── ScentQuiz.js     # Discovery scent quiz (multi-step)
+│       ├── Recommendations.js # Personalized perfume recommendations
+│       ├── Explore.js       # Discovery explore (horizontal sections)
+│       ├── Badges.js        # Gamification badges by category
+│       └── Leaderboard.js   # XP leaderboard with podium
 ├── backend/                # Cloudflare Worker
 │   ├── worker.js           # Router principal (ESM module)
 │   ├── auth.js             # Register/login/JWT

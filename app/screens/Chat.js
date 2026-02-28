@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { apiCall } from '../config';
 import { useAuth } from '../AuthContext';
+import { useWebSocket } from '../useWebSocket';
 import MessageBubble from '../components/MessageBubble';
 import TypingIndicator from '../components/TypingIndicator';
 import OnlineIndicator from '../components/OnlineIndicator';
@@ -16,12 +17,35 @@ export default function ChatScreen({ route, navigation }) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   const flatListRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   const lastTypingSentRef = useRef(0);
   const pollIntervalRef = useRef(1000);
+
+  // WebSocket for real-time messaging
+  const ws = useWebSocket(userId);
+
+  // Set up WebSocket message handlers
+  useEffect(() => {
+    ws.setHandlers({
+      onMessage: (message) => {
+        setMessages(prev => [...prev, message]);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      },
+      onRead: (data) => {
+        // Mark messages as read in UI
+        setMessages(prev => prev.map(m =>
+          m.from_user_id === currentUserId ? { ...m, is_read: 1 } : m
+        ));
+      },
+      onReaction: (data) => {
+        setReactions(prev => [
+          ...prev.filter(r => !(r.message_id === data.message_id && r.user_id === data.user_id)),
+          data,
+        ]);
+      },
+    });
+  }, [currentUserId]);
 
   useEffect(() => {
     loadMessages();
@@ -31,14 +55,16 @@ export default function ChatScreen({ route, navigation }) {
       headerTitle: () => (
         <View style={styles.headerTitle}>
           <Text style={styles.headerName}>{userName}</Text>
-          {isOnline && <OnlineIndicator isOnline size={8} />}
+          {(ws.isOtherOnline || ws.isConnected) && <OnlineIndicator isOnline size={8} />}
         </View>
       ),
     });
-  }, [userName]);
+  }, [userName, ws.isOtherOnline, ws.isConnected]);
 
-  // Adaptive polling
+  // Fallback polling only when WebSocket is not connected
   useEffect(() => {
+    if (ws.isConnected) return; // WebSocket handles real-time updates
+
     let timer;
     const poll = async () => {
       await pollStatus();
@@ -46,10 +72,8 @@ export default function ChatScreen({ route, navigation }) {
       timer = setTimeout(poll, pollIntervalRef.current);
     };
 
-    // Start polling after initial load
     const startTimer = setTimeout(() => poll(), pollIntervalRef.current);
 
-    // Adaptive interval check
     const activityChecker = setInterval(() => {
       const idle = Date.now() - lastActivityRef.current;
       if (idle > 30000) pollIntervalRef.current = 10000;
@@ -62,7 +86,7 @@ export default function ChatScreen({ route, navigation }) {
       clearTimeout(timer);
       clearInterval(activityChecker);
     };
-  }, [currentUserId]);
+  }, [currentUserId, ws.isConnected]);
 
   const loadMessages = async () => {
     try {
@@ -129,7 +153,16 @@ export default function ChatScreen({ route, navigation }) {
     setNewMessage(text);
     lastActivityRef.current = Date.now();
     pollIntervalRef.current = 1000;
-    if (text.length > 0) sendTypingIndicator();
+    if (text.length > 0) {
+      // Use WebSocket typing if connected, otherwise REST
+      if (ws.isConnected) {
+        ws.sendTyping();
+      } else {
+        sendTypingIndicator();
+      }
+    } else if (ws.isConnected) {
+      ws.sendStopTyping();
+    }
   };
 
   const handleSend = async () => {
@@ -153,6 +186,18 @@ export default function ChatScreen({ route, navigation }) {
     setMessages(prev => [...prev, optimisticMsg]);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
+    // Try WebSocket first, fall back to REST
+    const sentViaWs = ws.isConnected && ws.sendMessage(messageText);
+
+    if (sentViaWs) {
+      // WebSocket will broadcast the saved message back
+      setMessages(prev => prev.map(m =>
+        m.id === tempId ? { ...m, status: 'sent' } : m
+      ));
+      setSending(false);
+      return;
+    }
+
     try {
       const data = await apiCall('/api/messages', {
         method: 'POST',
@@ -175,18 +220,23 @@ export default function ChatScreen({ route, navigation }) {
   };
 
   const handleReact = async (messageId, emoji) => {
-    try {
-      await apiCall(`/api/messages/${messageId}/react`, {
-        method: 'POST',
-        body: JSON.stringify({ emoji }),
-      });
-      // Optimistic reaction update
-      setReactions(prev => [
-        ...prev.filter(r => !(r.message_id === messageId && r.user_id === currentUserId)),
-        { id: 'temp', message_id: messageId, user_id: currentUserId, emoji },
-      ]);
-    } catch (error) {
-      console.error('Reaction error:', error);
+    // Optimistic reaction update
+    setReactions(prev => [
+      ...prev.filter(r => !(r.message_id === messageId && r.user_id === currentUserId)),
+      { id: 'temp', message_id: messageId, user_id: currentUserId, emoji },
+    ]);
+
+    if (ws.isConnected) {
+      ws.sendReaction(messageId, emoji);
+    } else {
+      try {
+        await apiCall(`/api/messages/${messageId}/react`, {
+          method: 'POST',
+          body: JSON.stringify({ emoji }),
+        });
+      } catch (error) {
+        console.error('Reaction error:', error);
+      }
     }
   };
 
@@ -249,8 +299,8 @@ export default function ChatScreen({ route, navigation }) {
         }}
       />
 
-      {/* Typing indicator */}
-      {isTyping && <TypingIndicator userName={userName} />}
+      {/* Typing indicator — WebSocket or polling */}
+      {(ws.isOtherTyping || (!ws.isConnected && isTyping)) && <TypingIndicator userName={userName} />}
 
       {/* Input */}
       <View style={styles.inputContainer}>

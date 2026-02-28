@@ -45,11 +45,22 @@
       }
     },
     "plugins": [
-      "expo-image-picker"
+      "expo-image-picker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#8b4513"
+        }
+      ]
     ],
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "scheme": "fragbase"
+    "scheme": "fragbase",
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#8b4513"
+    }
   }
 }
