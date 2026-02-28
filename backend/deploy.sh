@@ -44,6 +44,8 @@ MIGRATIONS=(
     "015-marketplace.sql"
     "016-barcode.sql"
     "017-statements-perfumers-recs.sql"
+    "018-link-perfumers.sql"
+    "019-scent-compass.sql"
 )
 
 for migration in "${MIGRATIONS[@]}"; do

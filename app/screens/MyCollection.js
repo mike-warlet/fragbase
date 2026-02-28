@@ -113,9 +113,14 @@ export default function MyCollection({ navigation }) {
     <View style={styles.container}>
       {/* Stats Header */}
       <View style={styles.statsBar}>
-        <TouchableOpacity onPress={() => navigation.navigate('CollectionAnalytics')}>
-          <Text style={styles.statsText}>{perfumes.length} perfumes  {'>'}</Text>
-        </TouchableOpacity>
+        <View style={styles.statsLinks}>
+          <TouchableOpacity onPress={() => navigation.navigate('CollectionAnalytics')}>
+            <Text style={styles.statsText}>{perfumes.length} perfumes  {'>'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('ScentCompass')}>
+            <Text style={styles.compassLink}>Bussola {'>'}</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.viewToggle}>
           <TouchableOpacity
             style={[styles.toggleBtn, viewMode === 'grid' && styles.toggleActive]}
@@ -184,10 +189,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  statsLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   statsText: {
     fontSize: typography.body,
     color: colors.textSecondary,
     fontWeight: typography.medium,
+  },
+  compassLink: {
+    fontSize: typography.caption,
+    color: colors.primary,
+    fontWeight: typography.semibold,
   },
   viewToggle: {
     flexDirection: 'row',

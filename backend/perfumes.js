@@ -284,6 +284,27 @@ export async function handleComparePerfumes(request, env) {
   }
 }
 
+// Get perfumes with compass scores for the Scent Compass visualization
+export async function handleGetCompassPerfumes(request, env) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, name, brand, year, gender, image_url, fresh_warm_score, light_heavy_score
+       FROM perfumes
+       WHERE fresh_warm_score IS NOT NULL AND light_heavy_score IS NOT NULL
+       ORDER BY brand ASC, name ASC`
+    ).all();
+
+    return new Response(JSON.stringify({ perfumes: results }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 // Get perfume reviews
 export async function handleGetPerfumeReviews(request, env, perfumeId) {
   try {

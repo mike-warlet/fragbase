@@ -9,6 +9,7 @@ const cache = new Map();
 const CACHE_TTL = {
   '/api/perfumes': 5 * 60 * 1000,       // 5 min
   '/api/perfumes/trending': 5 * 60 * 1000,
+  '/api/perfumes/compass': 5 * 60 * 1000,
   '/api/discovery/explore': 5 * 60 * 1000,
   '/api/discovery/quiz': 10 * 60 * 1000, // 10 min
   '/api/gamification/badges': 10 * 60 * 1000,

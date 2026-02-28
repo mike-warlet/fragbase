@@ -161,6 +161,24 @@ export default function ExploreScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
+      {/* Scent Compass banner */}
+      <TouchableOpacity
+        style={styles.compassBanner}
+        onPress={() => navigation.navigate('ScentCompass')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.compassBannerContent}>
+          <Text style={styles.compassBannerIcon}>{'@'}</Text>
+          <View style={styles.compassBannerText}>
+            <Text style={styles.compassBannerTitle}>Bussola Olfativa</Text>
+            <Text style={styles.compassBannerSubtitle}>
+              Explora fragancias num mapa interativo 2D
+            </Text>
+          </View>
+          <Text style={styles.compassBannerArrow}>{'>'}</Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Sections */}
       {sections.map(renderSection)}
 
@@ -228,6 +246,49 @@ const styles = StyleSheet.create({
   quizBannerArrow: {
     fontSize: typography.h4,
     color: colors.textPrimary,
+    fontWeight: typography.bold,
+    opacity: 0.7,
+  },
+
+  // Compass banner
+  compassBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  compassBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  compassBannerIcon: {
+    fontSize: 28,
+    color: colors.primary,
+    fontWeight: typography.bold,
+  },
+  compassBannerText: {
+    flex: 1,
+  },
+  compassBannerTitle: {
+    fontSize: typography.h6,
+    fontWeight: typography.bold,
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  compassBannerSubtitle: {
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  compassBannerArrow: {
+    fontSize: typography.h4,
+    color: colors.primary,
     fontWeight: typography.bold,
     opacity: 0.7,
   },

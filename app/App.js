@@ -44,6 +44,7 @@ import BarcodeScannerScreen from './screens/BarcodeScanner';
 import BatchCheckScreen from './screens/BatchCheck';
 import PerfumerProfileScreen from './screens/PerfumerProfile';
 import CollectionAnalyticsScreen from './screens/CollectionAnalytics';
+import ScentCompassScreen from './screens/ScentCompass';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -285,6 +286,11 @@ function MainStack() {
         name="CollectionAnalytics"
         component={CollectionAnalyticsScreen}
         options={{ title: 'Estatisticas' }}
+      />
+      <Stack.Screen
+        name="ScentCompass"
+        component={ScentCompassScreen}
+        options={{ title: 'Bussola Olfativa' }}
       />
     </Stack.Navigator>
   );

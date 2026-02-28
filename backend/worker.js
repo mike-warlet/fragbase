@@ -1,6 +1,6 @@
 // Cloudflare Worker - FragBase API
 import { handleRegister, handleLogin, handleGetMe } from './auth.js';
-import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews, handleGetTrendingPerfumes, handleComparePerfumes } from './perfumes.js';
+import { handleListPerfumes, handleGetPerfume, handleCreatePerfume, handleGetPerfumeReviews, handleGetTrendingPerfumes, handleComparePerfumes, handleGetCompassPerfumes } from './perfumes.js';
 import { handleCreateReview, handleUpdateReview, handleDeleteReview, handleLikeReview } from './reviews.js';
 import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser, handleGetUserCollections, handleGetFollowers, handleGetFollowing, handleGetNotifications, handleGetTasteProfile } from './users.js';
 import { handleGetFeed, handleCreatePost, handleDeletePost, handleLikePost, handleGetComments, handleCreateComment, handleDeleteComment } from './posts.js';
@@ -224,6 +224,9 @@ export default {
       }
       else if (path === '/api/perfumes/trending' && method === 'GET') {
         response = await handleGetTrendingPerfumes(request, env);
+      }
+      else if (path === '/api/perfumes/compass' && method === 'GET') {
+        response = await handleGetCompassPerfumes(request, env);
       }
       else if (path === '/api/perfumes' && method === 'GET') {
         response = await handleListPerfumes(request, env);
@@ -559,6 +562,7 @@ export default {
       if (method === 'GET') {
         const cacheable = [
           '/api/perfumes', '/api/perfumes/trending', '/api/perfumes/compare',
+          '/api/perfumes/compass',
           '/api/discovery/explore', '/api/discovery/quiz',
           '/api/gamification/badges', '/api/gamification/leaderboard',
           '/api/challenges', '/api/search',
