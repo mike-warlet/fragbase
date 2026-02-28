@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import theme from '../theme';
 
-export default function PerfumeCard({ perfume, onPress }) {
+function PerfumeCard({ perfume, onPress }) {
   const [imageError, setImageError] = React.useState(false);
   
   const renderAccordTags = () => {
@@ -85,6 +85,8 @@ export default function PerfumeCard({ perfume, onPress }) {
     </TouchableOpacity>
   );
 }
+
+export default React.memo(PerfumeCard);
 
 const styles = StyleSheet.create({
   card: {

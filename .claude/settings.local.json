@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.fragrantica.com)",
+      "WebSearch",
+      "Bash(git config user.email \"warlet.invest@gmail.com\" && git config user.name \"Mike Warlet\")",
+      "Bash(git add app/AuthContext.js && git commit -m \"$\\(cat <<'EOF'\nfeat: Create AuthContext with login/register/logout and token persistence\n\nAdds global auth state management via React Context with:\n- login/register/logout functions\n- Auto-restore session from AsyncStorage on mount\n- refreshUser to sync with backend\n- useAuth hook for easy consumption\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git add app/config.js && git commit -m \"$\\(cat <<'EOF'\nfeat: Add apiCall and apiUpload with auto JWT token injection\n\n- apiCall: reads token from AsyncStorage and injects Authorization header\n- apiUpload: multipart/form-data upload with auth\n- Original api\\(\\) unchanged for unauthenticated calls\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git add app/App.js && git commit -m \"$\\(cat <<'EOF'\nfeat: Integrate AuthContext and dark theme into App.js\n\n- Wrap app in AuthProvider for global auth state\n- Apply dark navigation theme using theme.js colors\n- Fix missing Text import for tab icons\n- Add StatusBar with light-content style\n- Loading spinner while restoring session\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git add app/screens/Login.js && git commit -m \"$\\(cat <<'EOF'\nfeat: Update Login screen with AuthContext and dark theme\n\n- Use useAuth\\(\\) hook for login/register instead of direct API calls\n- Apply dark theme from theme.js design system\n- Add KeyboardAvoidingView for better UX\n- Remove direct AsyncStorage/navigation handling \\(AuthContext manages it\\)\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git add app/screens/Profile.js && git commit -m \"$\\(cat <<'EOF'\nfix: Profile screen - fix apiCall import, add dark theme, use AuthContext\n\n- Fix broken apiCall import \\(was undefined, now from config.js\\)\n- Use AuthContext logout instead of manual AsyncStorage handling\n- Apply dark theme from theme.js design system\n- Add error state with retry button\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(ls backend/*.js | sort)",
+      "Bash(chmod +x /home/claude/fragbase/backend/deploy.sh)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nfeat: Sprint 7 - Discovery Engine, Gamification, Push Notifications, WebSocket, 500+ Perfumes\n\n- Discovery Engine: scent quiz \\(12 questions\\), recommendation algorithm, explore sections\n- Gamification: 34 badges across 8 categories, XP levels, leaderboard, achievement tracking\n- Push Notifications: Expo Push API integration, preferences, token management\n- WebSocket: Durable Objects ChatRoom for real-time messaging, typing, online status\n- 500+ perfumes seeded \\(450 new across 50+ brands, designer + niche\\)\n- Deploy script for migrations + worker deployment\n- Updated CLAUDE.md with Sprint 7 status\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(apt list --installed 2>/dev/null | grep -i chrom; which playwright 2>/dev/null; dpkg -l | grep -i \"headless\\\\|chrome\\\\|chromium\" 2>/dev/null | head -5)"
+    ]
+  }
+}

@@ -40,6 +40,9 @@ MIGRATIONS=(
     "011-discovery.sql"
     "012-gamification.sql"
     "013-push-tokens.sql"
+    "014-perfume-accords-column.sql"
+    "015-marketplace.sql"
+    "016-barcode.sql"
 )
 
 for migration in "${MIGRATIONS[@]}"; do

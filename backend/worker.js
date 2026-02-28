@@ -507,7 +507,40 @@ export default {
       Object.keys(corsHeaders).forEach(key => {
         response.headers.set(key, corsHeaders[key]);
       });
-      
+
+      // Add Cache-Control headers for read-heavy endpoints
+      if (method === 'GET') {
+        const cacheable = [
+          '/api/perfumes', '/api/perfumes/trending', '/api/perfumes/compare',
+          '/api/discovery/explore', '/api/discovery/quiz',
+          '/api/gamification/badges', '/api/gamification/leaderboard',
+          '/api/challenges', '/api/search',
+        ];
+        const shortCache = [
+          '/api/sotd/feed', '/api/posts', '/api/marketplace',
+        ];
+
+        if (cacheable.some(p => path === p || path.startsWith(p + '?'))) {
+          response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+        } else if (shortCache.some(p => path === p || path.startsWith(p + '?'))) {
+          response.headers.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=10');
+        }
+
+        // ETag based on response body for perfume detail endpoints
+        if (path.match(/^\/api\/perfumes\/[^\/]+$/) && response.status === 200) {
+          const body = await response.clone().text();
+          const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1', new TextEncoder().encode(body))))
+            .map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+          response.headers.set('ETag', `"${hash}"`);
+          response.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=120');
+
+          const ifNoneMatch = request.headers.get('If-None-Match');
+          if (ifNoneMatch === `"${hash}"`) {
+            return new Response(null, { status: 304, headers: response.headers });
+          }
+        }
+      }
+
       return response;
       
     } catch (error) {

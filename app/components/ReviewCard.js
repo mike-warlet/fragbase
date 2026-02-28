@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-na
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
-export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
+function ReviewCard({ review, onPerfumePress, onUserPress }) {
   const [liked, setLiked] = useState(review.is_liked || false);
   const [likeCount, setLikeCount] = useState(review.likes_count || 0);
   const [liking, setLiking] = useState(false);
@@ -105,6 +105,8 @@ export default function ReviewCard({ review, onPerfumePress, onUserPress }) {
     </View>
   );
 }
+
+export default React.memo(ReviewCard);
 
 const styles = StyleSheet.create({
   card: {

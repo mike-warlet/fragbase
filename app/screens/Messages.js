@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { apiCall } from '../config';
 import theme from '../theme';
@@ -11,10 +11,10 @@ export default function MessagesScreen({ navigation }) {
   useEffect(() => {
     loadConversations();
     
-    // Refresh every 10 seconds when screen is focused
+    // Refresh every 30 seconds to reduce battery drain
     const interval = setInterval(() => {
       loadConversations(true);
-    }, 10000);
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
@@ -55,7 +55,7 @@ export default function MessagesScreen({ navigation }) {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  const renderConversation = ({ item }) => (
+  const renderConversation = useCallback(({ item }) => (
     <TouchableOpacity
       style={styles.conversationCard}
       onPress={() => navigation.getParent()?.navigate('Chat', { 
@@ -98,7 +98,7 @@ export default function MessagesScreen({ navigation }) {
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [navigation]);
 
   if (loading) {
     return (

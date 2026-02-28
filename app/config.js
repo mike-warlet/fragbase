@@ -4,9 +4,60 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const API_URL = process.env.API_URL || 'https://fragbase-api.warlet-invest.workers.dev';
 
+// In-memory cache with TTL
+const cache = new Map();
+const CACHE_TTL = {
+  '/api/perfumes': 5 * 60 * 1000,       // 5 min
+  '/api/perfumes/trending': 5 * 60 * 1000,
+  '/api/discovery/explore': 5 * 60 * 1000,
+  '/api/discovery/quiz': 10 * 60 * 1000, // 10 min
+  '/api/gamification/badges': 10 * 60 * 1000,
+  '/api/gamification/leaderboard': 2 * 60 * 1000,
+  '/api/challenges': 5 * 60 * 1000,
+};
+
+function getCacheTTL(endpoint) {
+  const base = endpoint.split('?')[0];
+  return CACHE_TTL[base] || 0;
+}
+
+function getCached(key) {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data, ttl) {
+  if (cache.size > 100) {
+    const oldest = cache.keys().next().value;
+    cache.delete(oldest);
+  }
+  cache.set(key, { data, expiry: Date.now() + ttl });
+}
+
+export function invalidateCache(pattern) {
+  for (const key of cache.keys()) {
+    if (key.includes(pattern)) cache.delete(key);
+  }
+}
+
 // Basic API call (no auth header)
 export async function api(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
+  const method = options.method || 'GET';
+
+  // Check cache for GET requests
+  if (method === 'GET') {
+    const ttl = getCacheTTL(endpoint);
+    if (ttl > 0) {
+      const cached = getCached(endpoint);
+      if (cached) return cached;
+    }
+  }
 
   const config = {
     headers: {
@@ -21,6 +72,12 @@ export async function api(endpoint, options = {}) {
 
   if (!response.ok) {
     throw new Error(data.error || 'API request failed');
+  }
+
+  // Cache GET responses with configured TTL
+  if (method === 'GET') {
+    const ttl = getCacheTTL(endpoint);
+    if (ttl > 0) setCache(endpoint, data, ttl);
   }
 
   return data;

@@ -67,7 +67,7 @@ export default function MarketplaceScreen({ navigation }) {
     loadListings(1);
   };
 
-  const renderListing = ({ item }) => (
+  const renderListing = useCallback(({ item }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
@@ -102,7 +102,7 @@ export default function MarketplaceScreen({ navigation }) {
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [navigation]);
 
   return (
     <View style={styles.container}>

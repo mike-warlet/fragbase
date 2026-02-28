@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { api } from '../config';
 import PerfumeCard from '../components/PerfumeCard';
@@ -56,15 +56,14 @@ export default function SearchScreen({ navigation }) {
     }
   };
 
-  const renderPerfume = ({ item }) => (
-    <PerfumeCard 
+  const renderPerfume = useCallback(({ item }) => (
+    <PerfumeCard
       perfume={item}
       onPress={() => {
-        // Navigate to parent stack navigator
         navigation.getParent()?.navigate('PerfumeDetail', { perfumeId: item.id });
       }}
     />
-  );
+  ), [navigation]);
 
   return (
     <View style={styles.container}>

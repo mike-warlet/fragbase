@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -45,23 +45,28 @@ export default function CompareScreen({ route, navigation }) {
     }
   };
 
-  const handleSearch = async (query) => {
+  const searchTimer = useRef(null);
+
+  const handleSearch = useCallback((query) => {
     setSearchQuery(query);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     if (query.length < 2) {
       setSearchResults([]);
       return;
     }
-    setSearching(true);
-    try {
-      const data = await api(`/api/perfumes?q=${encodeURIComponent(query)}&limit=10`);
-      const results = (data.perfumes || []).filter(p => !selectedIds.includes(p.id));
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setSearching(false);
-    }
-  };
+    searchTimer.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const data = await api(`/api/perfumes?q=${encodeURIComponent(query)}&limit=10`);
+        const results = (data.perfumes || []).filter(p => !selectedIds.includes(p.id));
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  }, [selectedIds]);
 
   const addPerfume = (perfumeId) => {
     const newIds = [...selectedIds, perfumeId];
