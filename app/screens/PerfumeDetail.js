@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { api, apiCall } from '../config';
 import NoteVoting from '../components/NoteVoting';
@@ -27,11 +27,17 @@ export default function PerfumeDetailScreen({ route, navigation }) {
   const [seasonVotes, setSeasonVotes] = useState({ seasons: null, user_vote: null });
   const [wishlistStatus, setWishlistStatus] = useState({ status: {}, counts: {} });
   const [similarPerfumes, setSimilarPerfumes] = useState([]);
+  const [statements, setStatements] = useState([]);
+  const [noses, setNoses] = useState([]);
+  const [userRecs, setUserRecs] = useState([]);
+  const [statementText, setStatementText] = useState('');
+  const [statementRating, setStatementRating] = useState(8);
 
   useEffect(() => {
     loadPerfume();
     loadReviews();
     loadVotingData();
+    loadNewFeatures();
   }, []);
 
   const loadPerfume = async () => {
@@ -73,6 +79,32 @@ export default function PerfumeDetailScreen({ route, navigation }) {
       if (wishlistData.status === 'fulfilled') setWishlistStatus(wishlistData.value);
     } catch (error) {
       console.error('Error loading voting data:', error);
+    }
+  };
+
+  const loadNewFeatures = async () => {
+    const [stmts, nosesData, recsData] = await Promise.allSettled([
+      api(`/api/perfumes/${perfumeId}/statements`),
+      api(`/api/perfumes/${perfumeId}/noses`),
+      api(`/api/perfumes/${perfumeId}/recommendations`),
+    ]);
+    if (stmts.status === 'fulfilled') setStatements(stmts.value.statements || []);
+    if (nosesData.status === 'fulfilled') setNoses(nosesData.value.perfumers || []);
+    if (recsData.status === 'fulfilled') setUserRecs(recsData.value.recommendations || []);
+  };
+
+  const submitStatement = async () => {
+    if (!statementText.trim()) return;
+    try {
+      const data = await apiCall(`/api/perfumes/${perfumeId}/statements`, {
+        method: 'POST',
+        body: JSON.stringify({ text: statementText.trim(), rating: statementRating }),
+      });
+      setStatements(prev => [data.statement, ...prev]);
+      setStatementText('');
+      Alert.alert('Sucesso', 'Opiniao publicada!');
+    } catch (error) {
+      Alert.alert('Erro', error.message);
     }
   };
 
@@ -304,6 +336,110 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         onPress={(id) => navigation.push('PerfumeDetail', { perfumeId: id })}
       />
 
+      {/* Perfumer (Nose) */}
+      {noses.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Perfumista</Text>
+          {noses.map((nose) => (
+            <TouchableOpacity
+              key={nose.id}
+              style={styles.noseCard}
+              onPress={() => navigation.navigate('PerfumerProfile', { perfumerId: nose.id })}
+            >
+              <View style={styles.noseAvatar}>
+                <Text style={styles.noseAvatarText}>{nose.name.charAt(0)}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.noseName}>{nose.name}</Text>
+                <Text style={styles.noseRole}>{nose.role === 'co-creator' ? 'Co-criador' : 'Criador'}</Text>
+                {nose.nationality && <Text style={styles.noseNat}>{nose.nationality}</Text>}
+              </View>
+              <Text style={styles.noseArrow}>{'>'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Statements (micro-reviews) */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Opinioes Rapidas ({statements.length})</Text>
+        <View style={styles.statementInput}>
+          <TextInput
+            style={styles.statementTextInput}
+            placeholder="Sua opiniao em 280 caracteres..."
+            placeholderTextColor={theme.colors.textTertiary}
+            value={statementText}
+            onChangeText={setStatementText}
+            maxLength={280}
+            multiline
+          />
+          <View style={styles.statementActions}>
+            <View style={styles.ratingPicker}>
+              {[6,7,8,9,10].map(r => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.ratingChip, statementRating === r && styles.ratingChipActive]}
+                  onPress={() => setStatementRating(r)}
+                >
+                  <Text style={[styles.ratingChipText, statementRating === r && styles.ratingChipTextActive]}>{r}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.statementSubmit} onPress={submitStatement}>
+              <Text style={styles.statementSubmitText}>Publicar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        {statements.slice(0, 5).map((s) => (
+          <View key={s.id} style={styles.statementCard}>
+            <View style={styles.statementHeader}>
+              <Text style={styles.statementUser}>@{s.username}</Text>
+              <View style={styles.statementRatingBadge}>
+                <Text style={styles.statementRatingText}>{s.rating}/10</Text>
+              </View>
+            </View>
+            <Text style={styles.statementBody}>{s.text}</Text>
+            {s.tags && s.tags.length > 0 && (
+              <View style={styles.statementTags}>
+                {s.tags.map(t => (
+                  <View key={t} style={styles.statementTag}>
+                    <Text style={styles.statementTagText}>{t.replace('_', ' ')}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+
+      {/* User Recommendations */}
+      {userRecs.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Se gostas deste, experimenta...</Text>
+          {userRecs.map((rec) => (
+            <TouchableOpacity
+              key={rec.id}
+              style={styles.recCard}
+              onPress={() => navigation.push('PerfumeDetail', { perfumeId: rec.recommended_perfume_id })}
+            >
+              {rec.rec_image ? (
+                <Image source={{ uri: rec.rec_image }} style={styles.recImage} />
+              ) : (
+                <View style={[styles.recImage, styles.recImagePlaceholder]}>
+                  <Text style={{ fontSize: 20 }}>🌸</Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.recBrand}>{rec.rec_brand}</Text>
+                <Text style={styles.recName}>{rec.rec_name}</Text>
+                {rec.reason && <Text style={styles.recReason}>"{rec.reason}"</Text>}
+                <Text style={styles.recBy}>por @{rec.username}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.reviewButton} onPress={handleCreateReview}>
@@ -519,5 +655,189 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: theme.typography.h6,
     fontWeight: theme.typography.bold,
+  },
+
+  // Perfumer (Nose)
+  noseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  noseAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noseAvatarText: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.h6,
+    fontWeight: theme.typography.bold,
+  },
+  noseName: {
+    fontSize: theme.typography.body + 1,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.textPrimary,
+  },
+  noseRole: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.primary,
+  },
+  noseNat: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textTertiary,
+  },
+  noseArrow: {
+    fontSize: theme.typography.h5,
+    color: theme.colors.textTertiary,
+  },
+
+  // Statements
+  statementInput: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  statementTextInput: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textPrimary,
+    minHeight: 50,
+    maxHeight: 100,
+  },
+  statementActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+  },
+  ratingPicker: {
+    flexDirection: 'row',
+    gap: theme.spacing.xs,
+  },
+  ratingChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ratingChipActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  ratingChipText: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.semibold,
+  },
+  ratingChipTextActive: {
+    color: theme.colors.textPrimary,
+  },
+  statementSubmit: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.lg,
+  },
+  statementSubmitText: {
+    color: theme.colors.textPrimary,
+    fontWeight: theme.typography.semibold,
+    fontSize: theme.typography.body,
+  },
+  statementCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  statementHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  statementUser: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.semibold,
+  },
+  statementRatingBadge: {
+    backgroundColor: theme.colors.primaryDark,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  statementRatingText: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.typography.bold,
+  },
+  statementBody: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textPrimary,
+    lineHeight: 20,
+  },
+  statementTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
+  },
+  statementTag: {
+    backgroundColor: theme.colors.surfaceLight,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.round,
+  },
+  statementTagText: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textSecondary,
+    textTransform: 'capitalize',
+  },
+
+  // Recommendations
+  recCard: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  recImage: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.borderRadius.md,
+    resizeMode: 'contain',
+  },
+  recImagePlaceholder: {
+    backgroundColor: theme.colors.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recBrand: {
+    fontSize: theme.typography.small,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.bold,
+    textTransform: 'uppercase',
+  },
+  recName: {
+    fontSize: theme.typography.body,
+    fontWeight: theme.typography.semibold,
+    color: theme.colors.textPrimary,
+  },
+  recReason: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  recBy: {
+    fontSize: theme.typography.small,
+    color: theme.colors.textTertiary,
+    marginTop: 2,
   },
 });

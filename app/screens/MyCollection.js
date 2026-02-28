@@ -113,7 +113,9 @@ export default function MyCollection({ navigation }) {
     <View style={styles.container}>
       {/* Stats Header */}
       <View style={styles.statsBar}>
-        <Text style={styles.statsText}>{perfumes.length} perfumes</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('CollectionAnalytics')}>
+          <Text style={styles.statsText}>{perfumes.length} perfumes  {'>'}</Text>
+        </TouchableOpacity>
         <View style={styles.viewToggle}>
           <TouchableOpacity
             style={[styles.toggleBtn, viewMode === 'grid' && styles.toggleActive]}

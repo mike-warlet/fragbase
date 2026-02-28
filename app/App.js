@@ -42,6 +42,8 @@ import CreateListingScreen from './screens/CreateListing';
 import ListingDetailScreen from './screens/ListingDetail';
 import BarcodeScannerScreen from './screens/BarcodeScanner';
 import BatchCheckScreen from './screens/BatchCheck';
+import PerfumerProfileScreen from './screens/PerfumerProfile';
+import CollectionAnalyticsScreen from './screens/CollectionAnalytics';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -273,6 +275,16 @@ function MainStack() {
         name="BatchCheck"
         component={BatchCheckScreen}
         options={{ title: 'Batch Code' }}
+      />
+      <Stack.Screen
+        name="PerfumerProfile"
+        component={PerfumerProfileScreen}
+        options={{ title: 'Perfumista' }}
+      />
+      <Stack.Screen
+        name="CollectionAnalytics"
+        component={CollectionAnalyticsScreen}
+        options={{ title: 'Estatisticas' }}
       />
     </Stack.Navigator>
   );
