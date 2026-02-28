@@ -5,7 +5,7 @@ import { requireAuth } from './auth.js';
 export async function handleGetUser(request, env, userId) {
   try {
     const user = await env.DB.prepare(
-      'SELECT id, username, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
+      'SELECT id, username, email, name, name as display_name, photo_url, photo_url as avatar_url, bio, created_at FROM users WHERE id = ?'
     ).bind(userId).first();
     
     if (!user) {
@@ -32,8 +32,10 @@ export async function handleGetUser(request, env, userId) {
       user: {
         ...user,
         follower_count: followerCount.count || 0,
+        followers_count: followerCount.count || 0,
         following_count: followingCount.count || 0,
-        review_count: reviewCount.count || 0
+        review_count: reviewCount.count || 0,
+        reviews_count: reviewCount.count || 0
       }
     }), {
       headers: { 'Content-Type': 'application/json' }
@@ -57,18 +59,22 @@ export async function handleUpdateUser(request, env) {
   }
   
   try {
-    const { name, bio, photo_url } = await request.json();
-    
+    const body = await request.json();
+    // Accept both name/display_name and photo_url/avatar_url
+    const name = body.display_name || body.name;
+    const bio = body.bio;
+    const photo_url = body.avatar_url || body.photo_url;
+
     await env.DB.prepare(
-      `UPDATE users 
-       SET name = COALESCE(?, name), 
+      `UPDATE users
+       SET name = COALESCE(?, name),
            bio = COALESCE(?, bio),
            photo_url = COALESCE(?, photo_url)
        WHERE id = ?`
     ).bind(name, bio, photo_url, auth.userId).run();
     
     const user = await env.DB.prepare(
-      'SELECT id, username, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
+      'SELECT id, username, email, name, name as display_name, photo_url, photo_url as avatar_url, bio, created_at FROM users WHERE id = ?'
     ).bind(auth.userId).first();
     
     return new Response(JSON.stringify({ user }), {

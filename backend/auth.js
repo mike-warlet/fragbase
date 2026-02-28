@@ -55,7 +55,7 @@ export async function authenticate(request, env) {
   // Get user from database
   try {
     const user = await env.DB.prepare(
-      'SELECT id, username, email, name, photo_url, bio FROM users WHERE id = ?'
+      'SELECT id, username, email, name, name as display_name, photo_url, photo_url as avatar_url, bio FROM users WHERE id = ?'
     ).bind(decoded.userId).first();
     
     return user;
@@ -135,7 +135,7 @@ export async function handleRegister(request, env) {
     
     return new Response(JSON.stringify({ 
       token, 
-      user: { id: userId, username, email: emailAddress, name } 
+      user: { id: userId, username, email: emailAddress, name, display_name: name }
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
@@ -218,7 +218,7 @@ export async function handleGetMe(request, env) {
   
   try {
     const user = await env.DB.prepare(
-      'SELECT id, username, email, name, photo_url, bio, created_at FROM users WHERE id = ?'
+      'SELECT id, username, email, name, name as display_name, photo_url, photo_url as avatar_url, bio, created_at FROM users WHERE id = ?'
     ).bind(auth.userId).first();
     
     if (!user) {
