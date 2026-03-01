@@ -58,7 +58,7 @@ export default function MessagesScreen({ navigation }) {
   const renderConversation = useCallback(({ item }) => (
     <TouchableOpacity
       style={styles.conversationCard}
-      onPress={() => navigation.getParent()?.navigate('Chat', { 
+      onPress={() => navigation.navigate('Chat', {
         userId: item.other_user_id,
         userName: item.other_user_name,
         userPhoto: item.other_user_photo

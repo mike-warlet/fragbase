@@ -124,7 +124,7 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const renderPost = useCallback(({ item }) => (
+  const renderPost = ({ item }) => (
     <View style={[styles.postCard, item.type === 'sotd' && styles.sotdPostCard]}>
       {/* SOTD badge */}
       {item.type === 'sotd' && (
@@ -135,7 +135,7 @@ export default function HomeScreen({ navigation }) {
       {/* User header */}
       <TouchableOpacity
         style={styles.postHeader}
-        onPress={() => navigation.getParent()?.navigate('UserProfile', { userId: item.user_id })}
+        onPress={() => navigation.navigate('UserProfile', { userId: item.user_id })}
       >
         {item.user_photo ? (
           <Image source={{ uri: item.user_photo }} style={styles.avatar} />
@@ -158,7 +158,7 @@ export default function HomeScreen({ navigation }) {
       {item.perfume_name && (
         <TouchableOpacity
           style={styles.perfumeLink}
-          onPress={() => navigation.getParent()?.navigate('PerfumeDetail', { perfumeId: item.perfume_id })}
+          onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: item.perfume_id })}
         >
           {item.perfume_image && (
             <Image source={{ uri: item.perfume_image }} style={styles.perfumeImage} />
@@ -224,7 +224,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       )}
     </View>
-  ), [expandedComments, comments, commentText, navigation]);
+  );
 
   if (loading) {
     return (
@@ -265,7 +265,7 @@ export default function HomeScreen({ navigation }) {
       {/* Floating action button */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.getParent()?.navigate('CreatePost')}
+        onPress={() => navigation.navigate('CreatePost')}
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
