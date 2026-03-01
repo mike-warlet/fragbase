@@ -77,7 +77,8 @@ export async function handleSearchByNote(request, env) {
 
   const searchTerm = `%${note}%`;
   const { results } = await env.DB.prepare(`
-    SELECT id, name, brand, year, image_url, avg_rating,
+    SELECT id, name, brand, year, image_url,
+      (SELECT ROUND(AVG(rating), 1) FROM reviews WHERE perfume_id = perfumes.id) as avg_rating,
       CASE
         WHEN notes_top LIKE ? THEN 'top'
         WHEN notes_heart LIKE ? THEN 'heart'
