@@ -90,6 +90,8 @@ export default React.memo(PerfumeCard);
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1,
+    maxWidth: '48%',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
