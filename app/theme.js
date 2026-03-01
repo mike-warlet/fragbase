@@ -151,6 +151,10 @@ export const getGenderColor = (gender) => {
   return colors.unisex;
 };
 
+// Re-export useAppTheme for convenience — screens that want dynamic theme
+// can do: import { useAppTheme } from '../theme';
+export { useAppTheme } from './ThemeContext';
+
 export default {
   colors,
   typography,

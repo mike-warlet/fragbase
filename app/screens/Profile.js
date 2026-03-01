@@ -9,13 +9,16 @@ import {
   Alert,
   ScrollView,
   RefreshControl,
+  Switch,
 } from 'react-native';
 import { apiCall } from '../config';
 import { useAuth } from '../AuthContext';
+import { useAppTheme } from '../ThemeContext';
 import { colors, typography, spacing, borderRadius } from '../theme';
 
 export default function Profile({ navigation }) {
   const { logout, user: authUser } = useAuth();
+  const { isDark, toggleTheme } = useAppTheme();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -290,6 +293,17 @@ export default function Profile({ navigation }) {
           <Text style={styles.menuText}>Ver Perfil Publico</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
+
+        <View style={styles.menuItem}>
+          <Text style={styles.menuIcon}>{isDark ? '\u263E' : '\u2600'}</Text>
+          <Text style={styles.menuText}>Tema Claro</Text>
+          <Switch
+            value={!isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: colors.border, true: colors.primaryLight }}
+            thumbColor={!isDark ? colors.primary : colors.textTertiary}
+          />
+        </View>
 
         <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
           <Text style={styles.menuIcon}>🚪</Text>

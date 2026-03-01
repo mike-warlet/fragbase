@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Text, ActivityIndicator, View, StatusBar, TouchableOpacity } from 'react-native';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, useAuth } from './AuthContext';
+import { ThemeProvider, useAppTheme } from './ThemeContext';
 import { apiCall } from './config';
 import ErrorBoundary from './components/ErrorBoundary';
-import { colors } from './theme';
 
 // Screens
 import LoginScreen from './screens/Login';
@@ -52,26 +52,37 @@ import IngredientDetailScreen from './screens/IngredientDetail';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const navTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: colors.primary,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.textPrimary,
-    border: colors.border,
-  },
-};
+function useNavTheme() {
+  const { isDark, theme } = useAppTheme();
+  const c = theme.colors;
+  return useMemo(() => ({
+    dark: isDark,
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: c.primary,
+      background: c.background,
+      card: c.surface,
+      text: c.textPrimary,
+      border: c.border,
+    },
+  }), [isDark, c]);
+}
 
-const screenOptions = {
-  headerStyle: { backgroundColor: colors.surface },
-  headerTintColor: colors.textPrimary,
-  headerTitleStyle: { fontWeight: '600' },
-};
+function useScreenOptions() {
+  const { theme } = useAppTheme();
+  const c = theme.colors;
+  return useMemo(() => ({
+    headerStyle: { backgroundColor: c.surface },
+    headerTintColor: c.textPrimary,
+    headerTitleStyle: { fontWeight: '600' },
+  }), [c]);
+}
 
 function MainTabs() {
   const { isLoggedIn } = useAuth();
+  const { theme } = useAppTheme();
+  const tc = theme.colors;
+  const dynamicScreenOptions = useScreenOptions();
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
@@ -99,11 +110,11 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textTertiary,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        tabBarActiveTintColor: tc.primary,
+        tabBarInactiveTintColor: tc.textTertiary,
+        tabBarStyle: { backgroundColor: tc.surface, borderTopColor: tc.border },
         headerShown: true,
-        ...screenOptions,
+        ...dynamicScreenOptions,
       }}
     >
       <Tab.Screen
@@ -124,7 +135,7 @@ function MainTabs() {
                   {unreadNotifications > 0 && (
                     <View style={{
                       position: 'absolute', top: -4, right: -6,
-                      backgroundColor: colors.error, borderRadius: 8,
+                      backgroundColor: tc.error, borderRadius: 8,
                       minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center',
                     }}>
                       <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>
@@ -165,7 +176,7 @@ function MainTabs() {
           tabBarLabel: 'Mensagens',
           tabBarIcon: () => <Text style={{ fontSize: 24 }}>💬</Text>,
           tabBarBadge: unreadMessages > 0 ? unreadMessages : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.error, fontSize: 10 },
+          tabBarBadgeStyle: { backgroundColor: tc.error, fontSize: 10 },
         }}
         listeners={{ focus: fetchUnreadCount }}
       />
@@ -183,8 +194,9 @@ function MainTabs() {
 }
 
 function MainStack() {
+  const dynamicScreenOptions = useScreenOptions();
   return (
-    <Stack.Navigator screenOptions={screenOptions}>
+    <Stack.Navigator screenOptions={dynamicScreenOptions}>
       <Stack.Screen
         name="MainTabs"
         component={MainTabs}
@@ -363,11 +375,14 @@ function MainStack() {
 
 function AppNavigator() {
   const { isLoggedIn, isLoading } = useAuth();
+  const { isDark, theme } = useAppTheme();
+  const dynamicNavTheme = useNavTheme();
+  const tc = theme.colors;
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: tc.background }}>
+        <ActivityIndicator size="large" color={tc.primary} />
       </View>
     );
   }
@@ -388,8 +403,8 @@ function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme} linking={linking}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <NavigationContainer theme={dynamicNavTheme} linking={linking}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={tc.background} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -404,9 +419,11 @@ function AppNavigator() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <AppNavigator />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppNavigator />
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

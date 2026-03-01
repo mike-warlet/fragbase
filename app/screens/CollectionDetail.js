@@ -76,6 +76,33 @@ export default function CollectionDetail({ route, navigation }) {
     }
   };
 
+  const handleExportCollection = async () => {
+    if (!collection?.perfumes?.length) {
+      Alert.alert('Vazio', 'Nenhum perfume para exportar');
+      return;
+    }
+    const perfumes = collection.perfumes;
+    const csvHeader = 'Nome,Marca,Ano,Tipo,Rating';
+    const csvRows = perfumes.map(p => {
+      const rating = p.avg_rating ? Number(p.avg_rating).toFixed(1) : '';
+      return `"${(p.name || '').replace(/"/g, '""')}","${(p.brand || '').replace(/"/g, '""')}",${p.year || ''},${p.type || ''},${rating}`;
+    });
+    const csv = [csvHeader, ...csvRows].join('\n');
+    const summary = `${collection.name} (${perfumes.length} perfumes)\n\n${perfumes.map((p, i) => `${i + 1}. ${p.name} - ${p.brand}${p.year ? ` (${p.year})` : ''}`).join('\n')}`;
+
+    Alert.alert('Exportar Colecao', 'Escolha o formato', [
+      {
+        text: 'Lista de Texto',
+        onPress: () => Share.share({ message: summary }),
+      },
+      {
+        text: 'CSV',
+        onPress: () => Share.share({ message: csv }),
+      },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+
   const handleDeleteCollection = () => {
     Alert.alert(
       'Excluir coleção',
@@ -129,6 +156,9 @@ export default function CollectionDetail({ route, navigation }) {
             )}
           </View>
           <View style={styles.headerButtons}>
+            <TouchableOpacity onPress={handleExportCollection}>
+              <Text style={styles.actionIcon}>📋</Text>
+            </TouchableOpacity>
             {collection.is_public === 1 && (
               <TouchableOpacity onPress={handleShareCollection}>
                 <Text style={styles.actionIcon}>📤</Text>
