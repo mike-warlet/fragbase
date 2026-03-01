@@ -14,28 +14,39 @@ export async function handleGetConversations(request, env) {
   try {
     // Get unique conversations with last message
     const { results } = await env.DB.prepare(
-      `SELECT 
-        CASE 
-          WHEN m.from_user_id = ? THEN m.to_user_id 
-          ELSE m.from_user_id 
+      `SELECT
+        CASE
+          WHEN m.from_user_id = ? THEN m.to_user_id
+          ELSE m.from_user_id
         END as other_user_id,
         u.name as other_user_name,
         u.photo_url as other_user_photo,
         MAX(m.created_at) as last_message_time,
-        (SELECT text FROM messages 
-         WHERE (from_user_id = ? AND to_user_id = other_user_id) 
-            OR (from_user_id = other_user_id AND to_user_id = ?)
-         ORDER BY created_at DESC LIMIT 1) as last_message,
         SUM(CASE WHEN m.to_user_id = ? AND m.is_read = 0 THEN 1 ELSE 0 END) as unread_count
        FROM messages m
-       JOIN users u ON u.id = CASE 
-         WHEN m.from_user_id = ? THEN m.to_user_id 
-         ELSE m.from_user_id 
+       JOIN users u ON u.id = CASE
+         WHEN m.from_user_id = ? THEN m.to_user_id
+         ELSE m.from_user_id
        END
        WHERE m.from_user_id = ? OR m.to_user_id = ?
        GROUP BY other_user_id, u.name, u.photo_url
        ORDER BY last_message_time DESC`
-    ).bind(auth.userId, auth.userId, auth.userId, auth.userId, auth.userId, auth.userId, auth.userId).all();
+    ).bind(auth.userId, auth.userId, auth.userId, auth.userId, auth.userId).all();
+
+    // Fetch last message for each conversation
+    for (const conv of results) {
+      try {
+        const lastMsg = await env.DB.prepare(
+          `SELECT text FROM messages
+           WHERE (from_user_id = ? AND to_user_id = ?)
+              OR (from_user_id = ? AND to_user_id = ?)
+           ORDER BY created_at DESC LIMIT 1`
+        ).bind(auth.userId, conv.other_user_id, conv.other_user_id, auth.userId).first();
+        conv.last_message = lastMsg?.text || '';
+      } catch {
+        conv.last_message = '';
+      }
+    }
     
     return new Response(JSON.stringify({ conversations: results }), {
       headers: { 'Content-Type': 'application/json' }
