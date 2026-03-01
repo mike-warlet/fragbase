@@ -18,6 +18,7 @@ export default function Profile({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetchProfile();
     const unsubscribe = navigation.addListener('focus', () => {
       fetchProfile();
     });
@@ -29,7 +30,13 @@ export default function Profile({ navigation }) {
       const data = await apiCall('/api/auth/me');
       setUser(data.user || data);
     } catch (error) {
-      Alert.alert('Erro', 'Falha ao carregar perfil');
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        Alert.alert('Sessao expirada', 'Por favor faca login novamente.', [
+          { text: 'OK', onPress: logout },
+        ]);
+      } else {
+        Alert.alert('Erro', 'Falha ao carregar perfil');
+      }
     } finally {
       setLoading(false);
     }
@@ -73,10 +80,15 @@ export default function Profile({ navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Image
-          source={{ uri: user.avatar_url || 'https://via.placeholder.com/100' }}
-          style={styles.avatar}
-        />
+        {user.avatar_url ? (
+          <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Text style={styles.avatarPlaceholderText}>
+              {(user.display_name || user.name || '?').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
         <Text style={styles.name}>{user.display_name || user.name}</Text>
         <Text style={styles.username}>@{user.username}</Text>
         {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
@@ -108,6 +120,15 @@ export default function Profile({ navigation }) {
 
       {/* Menu */}
       <View style={styles.menu}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('TasteProfile')}
+        >
+          <Text style={styles.menuIcon}>👃</Text>
+          <Text style={styles.menuText}>Perfil Olfativo</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Explore')}
@@ -255,6 +276,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 3,
     borderColor: colors.primary,
+  },
+  avatarPlaceholder: {
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarPlaceholderText: {
+    color: colors.textPrimary,
+    fontSize: 40,
+    fontWeight: typography.bold,
   },
   name: {
     fontSize: typography.h3,
