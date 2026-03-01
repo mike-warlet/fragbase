@@ -129,12 +129,18 @@ export default function EditProfile({ navigation }) {
     <ScrollView style={styles.container}>
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={pickImage}>
-          <Image
-            source={{
-              uri: selectedImage?.uri || profile.avatar_url || 'https://via.placeholder.com/120',
-            }}
-            style={styles.avatar}
-          />
+          {selectedImage?.uri || profile.avatar_url ? (
+            <Image
+              source={{ uri: selectedImage?.uri || profile.avatar_url }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarPlaceholderText}>
+                {(profile.display_name || profile.username || '?').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
           <View style={styles.avatarOverlay}>
             <Text style={styles.avatarText}>Alterar Foto</Text>
           </View>
@@ -213,6 +219,16 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
+  },
+  avatarPlaceholder: {
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarPlaceholderText: {
+    color: colors.textPrimary,
+    fontSize: 48,
+    fontWeight: typography.bold,
   },
   avatarOverlay: {
     position: 'absolute',

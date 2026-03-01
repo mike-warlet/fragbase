@@ -85,10 +85,15 @@ export default function UserProfile({ route, navigation }) {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Image
-          source={{ uri: user.avatar_url || 'https://via.placeholder.com/100' }}
-          style={styles.avatar}
-        />
+        {user.avatar_url ? (
+          <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Text style={styles.avatarPlaceholderText}>
+              {(user.display_name || user.username || '?').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
         <Text style={styles.name}>{user.display_name}</Text>
         <Text style={styles.username}>@{user.username}</Text>
         {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
@@ -207,6 +212,16 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: spacing.md,
+  },
+  avatarPlaceholder: {
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarPlaceholderText: {
+    color: colors.textPrimary,
+    fontSize: 40,
+    fontWeight: typography.bold,
   },
   name: {
     fontSize: typography.h3,

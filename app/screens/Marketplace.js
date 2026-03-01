@@ -23,6 +23,8 @@ export default function MarketplaceScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // all, sell, swap
+  const [conditionFilter, setConditionFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('recent'); // recent, price_low, price_high
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -31,6 +33,8 @@ export default function MarketplaceScreen({ navigation }) {
       const params = new URLSearchParams({ page: pageNum, limit: 20 });
       if (search) params.set('q', search);
       if (filter !== 'all') params.set('type', filter);
+      if (conditionFilter !== 'all') params.set('condition', conditionFilter);
+      if (sortBy !== 'recent') params.set('sort', sortBy);
 
       const data = await apiCall(`/api/marketplace?${params}`);
       const newListings = data.listings || [];
@@ -47,12 +51,12 @@ export default function MarketplaceScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [search, filter]);
+  }, [search, filter, conditionFilter, sortBy]);
 
   useEffect(() => {
     setLoading(true);
     loadListings(1);
-  }, [filter]);
+  }, [filter, conditionFilter, sortBy]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -73,10 +77,16 @@ export default function MarketplaceScreen({ navigation }) {
       style={styles.card}
       onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
     >
-      <Image
-        source={{ uri: item.perfume_image || item.image_url || 'https://via.placeholder.com/80' }}
-        style={styles.cardImage}
-      />
+      {item.perfume_image || item.image_url ? (
+        <Image
+          source={{ uri: item.perfume_image || item.image_url }}
+          style={styles.cardImage}
+        />
+      ) : (
+        <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+          <Text style={styles.cardImagePlaceholderText}>🧴</Text>
+        </View>
+      )}
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
         <Text style={styles.cardBrand} numberOfLines={1}>
@@ -123,7 +133,7 @@ export default function MarketplaceScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Filter tabs */}
+      {/* Type + sort filters */}
       <View style={styles.filters}>
         {['all', 'sell', 'swap'].map(f => (
           <TouchableOpacity
@@ -134,6 +144,29 @@ export default function MarketplaceScreen({ navigation }) {
             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
               {f === 'all' ? 'Todos' : f === 'sell' ? 'Venda' : 'Troca'}
             </Text>
+          </TouchableOpacity>
+        ))}
+        <View style={{ flex: 1 }} />
+        {[{ key: 'recent', label: 'Recente' }, { key: 'price_low', label: 'Preco -' }, { key: 'price_high', label: 'Preco +' }].map(s => (
+          <TouchableOpacity
+            key={s.key}
+            style={[styles.filterTab, sortBy === s.key && styles.filterActive]}
+            onPress={() => setSortBy(s.key)}
+          >
+            <Text style={[styles.filterText, sortBy === s.key && styles.filterTextActive]}>{s.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Condition filter */}
+      <View style={styles.filters}>
+        {[{ key: 'all', label: 'Todas condicoes' }, { key: 'new', label: 'Novo' }, { key: 'used_like_new', label: 'Seminovo' }, { key: 'decant', label: 'Decant' }, { key: 'sample', label: 'Amostra' }].map(c => (
+          <TouchableOpacity
+            key={c.key}
+            style={[styles.filterTab, conditionFilter === c.key && styles.filterActive]}
+            onPress={() => setConditionFilter(c.key)}
+          >
+            <Text style={[styles.filterText, conditionFilter === c.key && styles.filterTextActive]}>{c.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -191,6 +224,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardImage: { width: 100, height: 120 },
+  cardImagePlaceholder: { backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center' },
+  cardImagePlaceholderText: { fontSize: 36 },
   cardContent: { flex: 1, padding: spacing.sm },
   cardTitle: { color: colors.textPrimary, fontSize: typography.h6, fontWeight: typography.semibold },
   cardBrand: { color: colors.textSecondary, fontSize: typography.caption, marginTop: 2 },

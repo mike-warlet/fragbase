@@ -88,7 +88,13 @@ export default function CreateListingScreen({ navigation, route }) {
         <Text style={styles.label}>Perfume (opcional)</Text>
         {selectedPerfume ? (
           <View style={styles.selectedPerfume}>
-            <Image source={{ uri: selectedPerfume.image_url || 'https://via.placeholder.com/40' }} style={styles.perfumeThumb} />
+            {selectedPerfume.image_url ? (
+              <Image source={{ uri: selectedPerfume.image_url }} style={styles.perfumeThumb} />
+            ) : (
+              <View style={[styles.perfumeThumb, styles.perfumeThumbPlaceholder]}>
+                <Text style={styles.perfumeThumbPlaceholderText}>🧴</Text>
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <Text style={styles.perfumeName}>{selectedPerfume.name}</Text>
               <Text style={styles.perfumeBrand}>{selectedPerfume.brand}</Text>
@@ -191,6 +197,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md, padding: spacing.sm, gap: spacing.sm,
   },
   perfumeThumb: { width: 40, height: 40, borderRadius: borderRadius.sm },
+  perfumeThumbPlaceholder: { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  perfumeThumbPlaceholderText: { fontSize: 20 },
   perfumeName: { color: colors.textPrimary, fontSize: typography.body, fontWeight: typography.semibold },
   perfumeBrand: { color: colors.textSecondary, fontSize: typography.caption },
   removeBtn: { color: colors.error, fontSize: typography.h6, padding: spacing.xs },

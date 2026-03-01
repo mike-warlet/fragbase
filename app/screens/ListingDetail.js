@@ -70,10 +70,16 @@ export default function ListingDetailScreen({ navigation, route }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Image */}
-        <Image
-          source={{ uri: listing.perfume_image || listing.image_url || 'https://via.placeholder.com/300' }}
-          style={styles.image}
-        />
+        {listing.perfume_image || listing.image_url ? (
+          <Image
+            source={{ uri: listing.perfume_image || listing.image_url }}
+            style={styles.image}
+          />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <Text style={styles.imagePlaceholderText}>🧴</Text>
+          </View>
+        )}
 
         {/* Status badges */}
         <View style={styles.badges}>
@@ -115,7 +121,13 @@ export default function ListingDetailScreen({ navigation, route }) {
         {listing.perfume_name && (
           <TouchableOpacity style={styles.perfumeLink}
             onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: listing.perfume_id_ref })}>
-            <Image source={{ uri: listing.perfume_image || 'https://via.placeholder.com/50' }} style={styles.perfumeThumb} />
+            {listing.perfume_image ? (
+              <Image source={{ uri: listing.perfume_image }} style={styles.perfumeThumb} />
+            ) : (
+              <View style={[styles.perfumeThumb, styles.perfumeThumbPlaceholder]}>
+                <Text style={styles.perfumeThumbPlaceholderText}>🧴</Text>
+              </View>
+            )}
             <View>
               <Text style={styles.perfumeName}>{listing.perfume_name}</Text>
               <Text style={styles.perfumeBrand}>{listing.perfume_brand}</Text>
@@ -127,7 +139,15 @@ export default function ListingDetailScreen({ navigation, route }) {
         {/* Seller info */}
         <TouchableOpacity style={styles.sellerCard}
           onPress={() => navigation.navigate('UserProfile', { userId: listing.seller_id })}>
-          <Image source={{ uri: listing.seller_photo || 'https://via.placeholder.com/40' }} style={styles.sellerPhoto} />
+          {listing.seller_photo ? (
+            <Image source={{ uri: listing.seller_photo }} style={styles.sellerPhoto} />
+          ) : (
+            <View style={[styles.sellerPhoto, styles.sellerPhotoPlaceholder]}>
+              <Text style={styles.sellerPhotoPlaceholderText}>
+                {(listing.seller_name || '?').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={styles.sellerName}>{listing.seller_name}</Text>
             <Text style={styles.sellerUsername}>@{listing.username}</Text>
@@ -193,6 +213,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: 100 },
   image: { width: '100%', height: 300 },
+  imagePlaceholder: { backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center' },
+  imagePlaceholderText: { fontSize: 80 },
   badges: { flexDirection: 'row', gap: spacing.xs, padding: spacing.md },
   badge: { backgroundColor: colors.surfaceLight, borderRadius: borderRadius.sm, paddingHorizontal: spacing.sm, paddingVertical: 3 },
   badgeText: { color: '#fff', fontSize: typography.caption },
@@ -208,6 +230,8 @@ const styles = StyleSheet.create({
     margin: spacing.md, borderRadius: borderRadius.lg, padding: spacing.md, gap: spacing.sm,
   },
   perfumeThumb: { width: 50, height: 50, borderRadius: borderRadius.sm },
+  perfumeThumbPlaceholder: { backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center' },
+  perfumeThumbPlaceholderText: { fontSize: 24 },
   perfumeName: { color: colors.textPrimary, fontSize: typography.body, fontWeight: typography.semibold },
   perfumeBrand: { color: colors.textSecondary, fontSize: typography.caption },
   arrow: { color: colors.textTertiary, fontSize: typography.h5 },
@@ -216,6 +240,8 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md, borderRadius: borderRadius.lg, padding: spacing.md, gap: spacing.sm,
   },
   sellerPhoto: { width: 48, height: 48, borderRadius: 24 },
+  sellerPhotoPlaceholder: { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
+  sellerPhotoPlaceholderText: { color: colors.textPrimary, fontSize: 20, fontWeight: typography.bold },
   sellerName: { color: colors.textPrimary, fontSize: typography.body, fontWeight: typography.semibold },
   sellerUsername: { color: colors.textSecondary, fontSize: typography.caption },
   sellerStats: { color: colors.textTertiary, fontSize: typography.small, marginTop: 2 },
