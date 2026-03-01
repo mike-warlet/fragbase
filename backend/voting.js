@@ -271,53 +271,167 @@ export async function handleGetSeasonVotes(request, env, perfumeId) {
   }
 }
 
-// ── Similar Perfumes ────────────────────────────────────────
+// ── Similar Perfumes (with dupe/upgrade detection) ─────────
 
 export async function handleGetSimilarPerfumes(request, env, perfumeId) {
   try {
     const url = new URL(request.url);
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '6'), 20);
+    const type = url.searchParams.get('type') || 'similar'; // similar | dupe | upgrade
 
-    // Get the perfume's notes
+    // 1. Load the source perfume with all the data we need for scoring
     const perfume = await env.DB.prepare(
-      'SELECT notes_top, notes_heart, notes_base FROM perfumes WHERE id = ?'
+      `SELECT id, name, brand, year, gender, accords,
+              fresh_warm_score, light_heavy_score,
+              notes_top, notes_heart, notes_base
+       FROM perfumes WHERE id = ?`
     ).bind(perfumeId).first();
 
     if (!perfume) return json({ error: 'Perfume not found' }, 404);
 
-    // Parse notes from comma-separated strings
-    const allNotes = [
-      ...(perfume.notes_top || '').split(',').map(n => n.trim()).filter(Boolean),
-      ...(perfume.notes_heart || '').split(',').map(n => n.trim()).filter(Boolean),
-      ...(perfume.notes_base || '').split(',').map(n => n.trim()).filter(Boolean),
-    ];
+    // Get source perfume average rating
+    const srcRating = await env.DB.prepare(
+      'SELECT ROUND(AVG(rating), 1) as avg_rating FROM reviews WHERE perfume_id = ?'
+    ).bind(perfumeId).first();
+    const sourceAvgRating = srcRating?.avg_rating || 0;
 
-    if (allNotes.length === 0) {
-      return json({ similar: [] });
+    // Parse the source accords (stored as JSON array string or comma-separated)
+    let sourceAccords = [];
+    if (perfume.accords) {
+      try {
+        const parsed = JSON.parse(perfume.accords);
+        sourceAccords = Array.isArray(parsed)
+          ? parsed.map(a => (typeof a === 'string' ? a : a.name || '').toLowerCase().trim()).filter(Boolean)
+          : [];
+      } catch {
+        sourceAccords = perfume.accords.split(',').map(a => a.toLowerCase().trim()).filter(Boolean);
+      }
     }
 
-    // Build LIKE conditions for each note
-    const conditions = allNotes.map(() =>
-      `(LOWER(p.notes_top) LIKE ? OR LOWER(p.notes_heart) LIKE ? OR LOWER(p.notes_base) LIKE ?)`
-    ).join(' OR ');
-
-    const params = [];
-    for (const note of allNotes) {
-      const pattern = `%${note.toLowerCase()}%`;
-      params.push(pattern, pattern, pattern);
+    // Also pull accords from community votes if the denormalized column is sparse
+    if (sourceAccords.length === 0) {
+      const { results: votedAccords } = await env.DB.prepare(
+        `SELECT accord_name FROM accord_votes
+         WHERE perfume_id = ? GROUP BY accord_name HAVING AVG(strength) >= 2
+         ORDER BY AVG(strength) DESC`
+      ).bind(perfumeId).all();
+      sourceAccords = votedAccords.map(a => a.accord_name.toLowerCase().trim());
     }
-    params.push(perfumeId, limit);
 
-    const { results } = await env.DB.prepare(
-      `SELECT p.id, p.name, p.brand, p.image_url, p.year,
+    // Also pull accords from perfume_accords table as fallback
+    if (sourceAccords.length === 0) {
+      const { results: paRows } = await env.DB.prepare(
+        'SELECT accord_name FROM perfume_accords WHERE perfume_id = ?'
+      ).bind(perfumeId).all();
+      sourceAccords = paRows.map(a => a.accord_name.toLowerCase().trim());
+    }
+
+    // 2. Fetch all candidate perfumes (excluding self) with their ratings
+    const { results: candidates } = await env.DB.prepare(
+      `SELECT p.id, p.name, p.brand, p.year, p.gender, p.image_url, p.accords,
+              p.fresh_warm_score, p.light_heavy_score,
               (SELECT ROUND(AVG(r.rating), 1) FROM reviews r WHERE r.perfume_id = p.id) as avg_rating
        FROM perfumes p
-       WHERE (${conditions})
-         AND p.id != ?
-       LIMIT ?`
-    ).bind(...params).all();
+       WHERE p.id != ?`
+    ).bind(perfumeId).all();
 
-    return json({ similar: results });
+    // 3. Score each candidate
+    const scored = [];
+    for (const c of candidates) {
+      // Parse candidate accords
+      let candAccords = [];
+      if (c.accords) {
+        try {
+          const parsed = JSON.parse(c.accords);
+          candAccords = Array.isArray(parsed)
+            ? parsed.map(a => (typeof a === 'string' ? a : a.name || '').toLowerCase().trim()).filter(Boolean)
+            : [];
+        } catch {
+          candAccords = c.accords.split(',').map(a => a.toLowerCase().trim()).filter(Boolean);
+        }
+      }
+
+      // --- Shared accords score (40%) ---
+      const sharedAccords = sourceAccords.filter(a => candAccords.includes(a));
+      const accordScore = sourceAccords.length > 0
+        ? sharedAccords.length / sourceAccords.length
+        : 0;
+
+      // --- Same brand bonus (10%) ---
+      const brandScore = (perfume.brand || '').toLowerCase() === (c.brand || '').toLowerCase() ? 1.0 : 0;
+
+      // --- Same gender (20%) ---
+      let genderScore = 0;
+      if (perfume.gender && c.gender) {
+        if (perfume.gender === c.gender) {
+          genderScore = 1.0;
+        } else if (perfume.gender === 'unisex' || c.gender === 'unisex') {
+          genderScore = 0.5;
+        }
+      }
+
+      // --- Close year (10%) ---
+      let yearScore = 0;
+      if (perfume.year && c.year) {
+        const diff = Math.abs(perfume.year - c.year);
+        yearScore = Math.max(0, 1 - diff / 30); // within 30 years scales linearly
+      }
+
+      // --- Compass proximity (20%) ---
+      let compassScore = 0;
+      if (perfume.fresh_warm_score != null && c.fresh_warm_score != null &&
+          perfume.light_heavy_score != null && c.light_heavy_score != null) {
+        const dx = perfume.fresh_warm_score - c.fresh_warm_score;
+        const dy = perfume.light_heavy_score - c.light_heavy_score;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        // Max distance on a 0-1 grid is sqrt(2) ~ 1.414
+        compassScore = Math.max(0, 1 - distance / 1.414);
+      }
+
+      // Weighted total
+      const similarity_score = Math.round(
+        (accordScore * 0.40 +
+         brandScore * 0.10 +
+         genderScore * 0.20 +
+         yearScore * 0.10 +
+         compassScore * 0.20) * 100
+      );
+
+      scored.push({
+        id: c.id,
+        name: c.name,
+        brand: c.brand,
+        year: c.year,
+        image_url: c.image_url,
+        avg_rating: c.avg_rating || 0,
+        similarity_score,
+        shared_accords: sharedAccords,
+      });
+    }
+
+    // 4. Filter by type
+    let filtered;
+    if (type === 'dupe') {
+      // Dupes: high similarity, different brand (cheaper alternatives)
+      filtered = scored.filter(s =>
+        s.similarity_score >= 30 &&
+        s.brand.toLowerCase() !== (perfume.brand || '').toLowerCase()
+      );
+    } else if (type === 'upgrade') {
+      // Upgrades: similar scent profile but higher rated
+      filtered = scored.filter(s =>
+        s.similarity_score >= 30 &&
+        s.avg_rating > sourceAvgRating
+      );
+    } else {
+      // Similar: all with decent similarity
+      filtered = scored.filter(s => s.similarity_score >= 20);
+    }
+
+    // 5. Sort by similarity score desc and take top 10
+    filtered.sort((a, b) => b.similarity_score - a.similarity_score);
+    const top = filtered.slice(0, 10);
+
+    return json({ similar: top });
   } catch (error) {
     return json({ error: error.message }, 500);
   }

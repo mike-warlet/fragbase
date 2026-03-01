@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Share } from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 
@@ -10,6 +10,21 @@ function ReviewCard({ review, onPerfumePress, onUserPress }) {
 
   const renderStars = (rating) => {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
+  };
+
+  const handleShare = async () => {
+    try {
+      const perfumeName = review.perfume_name || 'um perfume';
+      const username = review.user_name || 'anonimo';
+      const reviewText = review.text
+        ? review.text.substring(0, 100) + (review.text.length > 100 ? '...' : '')
+        : '';
+      await Share.share({
+        message: `Review de ${perfumeName} por ${username}: ${reviewText}\n\nVe mais no Fragbase!`,
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+    }
   };
 
   const handleLike = async () => {
@@ -93,15 +108,20 @@ function ReviewCard({ review, onPerfumePress, onUserPress }) {
         </View>
       )}
 
-      {/* Like button */}
-      <TouchableOpacity 
-        style={styles.likeButton}
-        onPress={handleLike}
-        disabled={liking}
-      >
-        <Text style={styles.likeIcon}>{liked ? '❤️' : '🤍'}</Text>
-        {likeCount > 0 && <Text style={styles.likeCount}>{likeCount}</Text>}
-      </TouchableOpacity>
+      {/* Like and Share buttons */}
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.likeButton}
+          onPress={handleLike}
+          disabled={liking}
+        >
+          <Text style={styles.likeIcon}>{liked ? '❤️' : '🤍'}</Text>
+          {likeCount > 0 && <Text style={styles.likeCount}>{likeCount}</Text>}
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.shareLink} onPress={handleShare}>
+          <Text style={styles.shareLinkText}>Partilhar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -211,13 +231,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.semibold,
     color: colors.primary,
   },
-  likeButton: {
+  cardActions: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: spacing.md - 4,
     paddingTop: spacing.md - 4,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   likeIcon: {
     fontSize: 20,
@@ -226,6 +251,15 @@ const styles = StyleSheet.create({
   likeCount: {
     fontSize: typography.body,
     color: colors.textSecondary,
+    fontWeight: typography.semibold,
+  },
+  shareLink: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  shareLinkText: {
+    fontSize: typography.caption,
+    color: colors.primary,
     fontWeight: typography.semibold,
   },
 });

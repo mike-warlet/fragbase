@@ -33,12 +33,13 @@ export default function MarketplaceScreen({ navigation }) {
       if (filter !== 'all') params.set('type', filter);
 
       const data = await apiCall(`/api/marketplace?${params}`);
+      const newListings = data.listings || [];
       if (append) {
-        setListings(prev => [...prev, ...data.listings]);
+        setListings(prev => [...prev, ...newListings]);
       } else {
-        setListings(data.listings);
+        setListings(newListings);
       }
-      setHasMore(data.has_more);
+      setHasMore(data.has_more ?? false);
       setPage(pageNum);
     } catch (err) {
       console.error('Load listings error:', err);

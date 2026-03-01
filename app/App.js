@@ -45,6 +45,7 @@ import BatchCheckScreen from './screens/BatchCheck';
 import PerfumerProfileScreen from './screens/PerfumerProfile';
 import CollectionAnalyticsScreen from './screens/CollectionAnalytics';
 import ScentCompassScreen from './screens/ScentCompass';
+import TasteProfileScreen from './screens/TasteProfile';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -292,6 +293,11 @@ function MainStack() {
         component={ScentCompassScreen}
         options={{ title: 'Bussola Olfativa' }}
       />
+      <Stack.Screen
+        name="TasteProfile"
+        component={TasteProfileScreen}
+        options={{ title: 'Perfil Olfativo' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -307,8 +313,23 @@ function AppNavigator() {
     );
   }
 
+  const linking = {
+    prefixes: ['fragbase://', 'https://fragbase.app'],
+    config: {
+      screens: {
+        Main: {
+          screens: {
+            MainTabs: { screens: { Feed: 'feed', Search: 'search' } },
+            PerfumeDetail: 'perfume/:perfumeId',
+            UserProfile: 'user/:userId',
+          }
+        },
+      }
+    }
+  };
+
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} linking={linking}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLoggedIn ? (

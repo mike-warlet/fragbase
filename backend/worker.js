@@ -12,7 +12,7 @@ import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVo
          handleGetSimilarPerfumes, handleAddToWishlist, handleRemoveFromWishlist,
          handleGetMyWishlists, handleGetWishlistStatus } from './voting.js';
 import { handleSetSOTD, handleGetMySOTD, handleGetSOTDFeed, handleGetSOTDHistory, handleGetDiaryCalendar, handleGetDiaryStats } from './sotd.js';
-import { handleGlobalSearch } from './search.js';
+import { handleGlobalSearch, handleGetFilterOptions } from './search.js';
 import { handleGetChallenges, handleGetChallenge, handleSubmitEntry, handleVoteEntry, handleGetUserBadges } from './challenges.js';
 import { handleGetTasteTwins, handleGetTasteMatch } from './taste.js';
 import { handleGetLayeringSuggestions, handleCreateLayeringSuggestion, handleVoteLayeringCombo, handleGetTopLayeringCombos } from './layering.js';
@@ -25,6 +25,7 @@ import { handleBatchCheck, handleBatchReport } from './batchcheck.js';
 import { handleGetStatements, handleCreateStatement, handleVoteStatement } from './statements.js';
 import { handleGetPerfumers, handleGetPerfumer, handleGetPerfumeNoses, handleLinkPerfumer } from './perfumers.js';
 import { handleGetRecommendations as handleGetUserRecs, handleCreateRecommendation, handleVoteRecommendation } from './recommendations.js';
+import { handleGetIngredients, handleGetIngredient, handleSearchByNote } from './ingredients.js';
 export { ChatRoom } from './chatroom.js';
 
 // CORS headers
@@ -145,6 +146,11 @@ export default {
         response = await handleGetTasteProfile(request, env, userId);
       }
       
+      // Filter options (for advanced search)
+      else if (path === '/api/filters/options' && method === 'GET') {
+        response = await handleGetFilterOptions(request, env);
+      }
+
       // Global search
       else if (path === '/api/search' && method === 'GET') {
         response = await handleGlobalSearch(request, env);
@@ -537,6 +543,18 @@ export default {
         response = await handleVoteRecommendation(request, env, recId);
       }
 
+      // Ingredient Encyclopedia
+      else if (path === '/api/ingredients' && method === 'GET') {
+        response = await handleGetIngredients(request, env);
+      }
+      else if (path === '/api/ingredients/search' && method === 'GET') {
+        response = await handleSearchByNote(request, env);
+      }
+      else if (path.match(/^\/api\/ingredients\/([^\/]+)$/) && method === 'GET') {
+        const ingredientId = path.match(/^\/api\/ingredients\/([^\/]+)$/)[1];
+        response = await handleGetIngredient(request, env, ingredientId);
+      }
+
       // WebSocket route for real-time chat
       else if (path.match(/^\/api\/ws\/([^\/]+)$/) && request.headers.get('Upgrade') === 'websocket') {
         const roomId = path.match(/^\/api\/ws\/([^\/]+)$/)[1];
@@ -565,7 +583,8 @@ export default {
           '/api/perfumes/compass',
           '/api/discovery/explore', '/api/discovery/quiz',
           '/api/gamification/badges', '/api/gamification/leaderboard',
-          '/api/challenges', '/api/search',
+          '/api/challenges', '/api/search', '/api/filters/options',
+          '/api/ingredients',
         ];
         const shortCache = [
           '/api/sotd/feed', '/api/posts', '/api/marketplace',
