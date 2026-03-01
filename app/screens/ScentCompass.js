@@ -340,22 +340,22 @@ export default function ScentCompassScreen({ navigation }) {
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>
-                {(filteredPerfumes.reduce((sum, p) => sum + p.fresh_warm_score, 0) / filteredPerfumes.length).toFixed(2)}
+                {(filteredPerfumes.reduce((sum, p) => sum + (p.fresh_warm_score || 0), 0) / filteredPerfumes.length).toFixed(2)}
               </Text>
               <Text style={styles.statLabel}>Media X</Text>
               <Text style={styles.statDetail}>
-                {(filteredPerfumes.reduce((sum, p) => sum + p.fresh_warm_score, 0) / filteredPerfumes.length) < 0.5
+                {(filteredPerfumes.reduce((sum, p) => sum + (p.fresh_warm_score || 0), 0) / filteredPerfumes.length) < 0.5
                   ? 'Tendencia fresca'
                   : 'Tendencia quente'}
               </Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>
-                {(filteredPerfumes.reduce((sum, p) => sum + p.light_heavy_score, 0) / filteredPerfumes.length).toFixed(2)}
+                {(filteredPerfumes.reduce((sum, p) => sum + (p.light_heavy_score || 0), 0) / filteredPerfumes.length).toFixed(2)}
               </Text>
               <Text style={styles.statLabel}>Media Y</Text>
               <Text style={styles.statDetail}>
-                {(filteredPerfumes.reduce((sum, p) => sum + p.light_heavy_score, 0) / filteredPerfumes.length) < 0.5
+                {(filteredPerfumes.reduce((sum, p) => sum + (p.light_heavy_score || 0), 0) / filteredPerfumes.length) < 0.5
                   ? 'Tendencia leve'
                   : 'Tendencia intensa'}
               </Text>

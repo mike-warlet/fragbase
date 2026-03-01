@@ -19,7 +19,9 @@ export async function handleGlobalSearch(request, env) {
     const sort = url.searchParams.get('sort') || 'relevance'; // relevance, rating, year, name
 
     // When filters are active, we don't require a search query
-    const hasFilters = brand || gender || yearMin || yearMax || minRating || accords.length > 0;
+    const perfumeTypeParam = url.searchParams.get('type_filter') || '';
+    const noteParam = url.searchParams.get('note') || '';
+    const hasFilters = brand || gender || yearMin || yearMax || minRating || accords.length > 0 || perfumeTypeParam || noteParam;
 
     if (!hasFilters && (!query.trim() || query.length < 2)) {
       return new Response(JSON.stringify({ error: 'Search query must be at least 2 characters' }), {
@@ -55,10 +57,25 @@ export async function handleGlobalSearch(request, env) {
         params.push(`%${brand}%`);
       }
 
+      // Type filter (Eau de Parfum, Eau de Toilette, etc.)
+      const perfumeType = url.searchParams.get('type_filter') || '';
+      if (perfumeType) {
+        whereClauses.push('p.type = ?');
+        params.push(perfumeType);
+      }
+
       // Gender filter
       if (gender) {
         whereClauses.push('LOWER(p.gender) = LOWER(?)');
         params.push(gender);
+      }
+
+      // Note search — search in notes_top, notes_heart, notes_base
+      const noteSearch = url.searchParams.get('note') || '';
+      if (noteSearch) {
+        const notePattern = `%${noteSearch}%`;
+        whereClauses.push('(p.notes_top LIKE ? OR p.notes_heart LIKE ? OR p.notes_base LIKE ?)');
+        params.push(notePattern, notePattern, notePattern);
       }
 
       // Year range filter
@@ -86,7 +103,7 @@ export async function handleGlobalSearch(request, env) {
 
       // Build the query with rating subquery
       let sql = `
-        SELECT p.id, p.name, p.brand, p.image_url, p.gender, p.concentration, p.year,
+        SELECT p.id, p.name, p.brand, p.image_url, p.gender, p.concentration, p.type, p.year,
                (SELECT ROUND(AVG(rating), 1) FROM reviews WHERE perfume_id = p.id) as avg_rating,
                (SELECT COUNT(*) FROM reviews WHERE perfume_id = p.id) as review_count
         FROM perfumes p
@@ -158,7 +175,7 @@ export async function handleGlobalSearch(request, env) {
 export async function handleGetFilterOptions(request, env) {
   try {
     // Run all queries in parallel via batch
-    const [brandsResult, gendersResult, yearRangeResult, accordsResult] = await env.DB.batch([
+    const [brandsResult, gendersResult, yearRangeResult, accordsResult, typesResult] = await env.DB.batch([
       // All brands with count
       env.DB.prepare(
         `SELECT brand, COUNT(*) as count
@@ -189,16 +206,26 @@ export async function handleGetFilterOptions(request, env) {
          ORDER BY count DESC
          LIMIT 50`
       ),
+      // Perfume types with count
+      env.DB.prepare(
+        `SELECT type, COUNT(*) as count
+         FROM perfumes
+         WHERE type IS NOT NULL AND type != ''
+         GROUP BY type
+         ORDER BY count DESC`
+      ),
     ]);
 
     const brands = brandsResult.results || [];
     const genders = gendersResult.results || [];
     const yearRange = yearRangeResult.results[0] || { min_year: null, max_year: null };
     const accords = accordsResult.results || [];
+    const types = typesResult.results || [];
 
     return new Response(JSON.stringify({
       brands,
       genders,
+      types,
       year_range: {
         min: yearRange.min_year,
         max: yearRange.max_year,

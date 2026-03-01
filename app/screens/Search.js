@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator,
-  TouchableOpacity, ScrollView, Animated, Modal, Dimensions, Alert,
+  TouchableOpacity, ScrollView, Animated, Alert,
 } from 'react-native';
 import { apiCall } from '../config';
 import PerfumeCard from '../components/PerfumeCard';
 import theme from '../theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const SORT_OPTIONS = [
   { key: 'relevance', label: 'Relevancia' },
@@ -20,6 +18,14 @@ const GENDER_OPTIONS = [
   { key: 'masculine', label: 'Masculino' },
   { key: 'feminine', label: 'Feminino' },
   { key: 'unisex', label: 'Unisex' },
+];
+
+const TYPE_OPTIONS = [
+  { key: 'Eau de Parfum', label: 'EDP' },
+  { key: 'Eau de Toilette', label: 'EDT' },
+  { key: 'Parfum', label: 'Parfum' },
+  { key: 'Extrait de Parfum', label: 'Extrait' },
+  { key: 'Eau de Cologne', label: 'EDC' },
 ];
 
 const RATING_OPTIONS = [
@@ -47,6 +53,8 @@ export default function SearchScreen({ navigation }) {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [noteSearch, setNoteSearch] = useState('');
   const [yearMin, setYearMin] = useState('');
   const [yearMax, setYearMax] = useState('');
   const [minRating, setMinRating] = useState(null);
@@ -62,9 +70,6 @@ export default function SearchScreen({ navigation }) {
 
   // Quick category
   const [activeCategory, setActiveCategory] = useState(null);
-
-  // Sort dropdown
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   // Animation for filter panel
   const filterAnim = useRef(new Animated.Value(0)).current;
@@ -86,7 +91,7 @@ export default function SearchScreen({ navigation }) {
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [query, selectedBrand, selectedGender, yearMin, yearMax, minRating, selectedAccords, sort]);
+  }, [query, selectedBrand, selectedGender, selectedType, noteSearch, yearMin, yearMax, minRating, selectedAccords, sort]);
 
   // Animate filter panel
   useEffect(() => {
@@ -98,19 +103,21 @@ export default function SearchScreen({ navigation }) {
   }, [showFilters]);
 
   const hasActiveFilters = useMemo(() => {
-    return !!(selectedBrand || selectedGender || yearMin || yearMax || minRating || selectedAccords.length > 0 || sort !== 'relevance');
-  }, [selectedBrand, selectedGender, yearMin, yearMax, minRating, selectedAccords, sort]);
+    return !!(selectedBrand || selectedGender || selectedType || noteSearch || yearMin || yearMax || minRating || selectedAccords.length > 0 || sort !== 'relevance');
+  }, [selectedBrand, selectedGender, selectedType, noteSearch, yearMin, yearMax, minRating, selectedAccords, sort]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (selectedBrand) count++;
     if (selectedGender) count++;
+    if (selectedType) count++;
+    if (noteSearch) count++;
     if (yearMin || yearMax) count++;
     if (minRating) count++;
     if (selectedAccords.length > 0) count++;
     if (sort !== 'relevance') count++;
     return count;
-  }, [selectedBrand, selectedGender, yearMin, yearMax, minRating, selectedAccords, sort]);
+  }, [selectedBrand, selectedGender, selectedType, noteSearch, yearMin, yearMax, minRating, selectedAccords, sort]);
 
   const loadFilterOptions = async () => {
     setLoadingOptions(true);
@@ -159,6 +166,12 @@ export default function SearchScreen({ navigation }) {
       if (selectedGender) {
         params.set('gender', selectedGender);
       }
+      if (selectedType) {
+        params.set('type_filter', selectedType);
+      }
+      if (noteSearch.trim()) {
+        params.set('note', noteSearch.trim());
+      }
       if (yearMin) {
         params.set('year_min', yearMin);
       }
@@ -187,6 +200,8 @@ export default function SearchScreen({ navigation }) {
   const clearAllFilters = () => {
     setSelectedBrand('');
     setSelectedGender('');
+    setSelectedType('');
+    setNoteSearch('');
     setYearMin('');
     setYearMax('');
     setMinRating(null);
@@ -202,6 +217,12 @@ export default function SearchScreen({ navigation }) {
         break;
       case 'gender':
         setSelectedGender('');
+        break;
+      case 'type':
+        setSelectedType('');
+        break;
+      case 'note':
+        setNoteSearch('');
         break;
       case 'year':
         setYearMin('');
@@ -269,6 +290,13 @@ export default function SearchScreen({ navigation }) {
     if (selectedGender) {
       const genderLabel = GENDER_OPTIONS.find(g => g.key === selectedGender)?.label || selectedGender;
       chips.push({ key: 'gender', label: genderLabel, type: 'gender' });
+    }
+    if (selectedType) {
+      const typeLabel = TYPE_OPTIONS.find(t => t.key === selectedType)?.label || selectedType;
+      chips.push({ key: 'type', label: typeLabel, type: 'type' });
+    }
+    if (noteSearch) {
+      chips.push({ key: 'note', label: `Nota: ${noteSearch}`, type: 'note' });
     }
     if (yearMin || yearMax) {
       const yearLabel = yearMin && yearMax ? `${yearMin}-${yearMax}` : yearMin ? `>= ${yearMin}` : `<= ${yearMax}`;
@@ -363,9 +391,6 @@ export default function SearchScreen({ navigation }) {
                   style={[
                     styles.genderButton,
                     selectedGender === option.key && styles.genderButtonActive,
-                    selectedGender === option.key && {
-                      backgroundColor: theme.colors[option.key] || theme.colors.primary,
-                    },
                   ]}
                   onPress={() => setSelectedGender(selectedGender === option.key ? '' : option.key)}
                   activeOpacity={0.7}
@@ -377,6 +402,41 @@ export default function SearchScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          {/* Type Section */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Concentracao</Text>
+            <View style={styles.typeRow}>
+              {TYPE_OPTIONS.map(option => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[
+                    styles.typeButton,
+                    selectedType === option.key && styles.typeButtonActive,
+                  ]}
+                  onPress={() => setSelectedType(selectedType === option.key ? '' : option.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.typeButtonText,
+                    selectedType === option.key && styles.typeButtonTextActive,
+                  ]}>{option.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Note Search Section */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Buscar por nota</Text>
+            <TextInput
+              style={styles.noteSearchInput}
+              placeholder="Ex: vanilla, rose, oud..."
+              placeholderTextColor={theme.colors.textTertiary}
+              value={noteSearch}
+              onChangeText={setNoteSearch}
+            />
           </View>
 
           {/* Rating Section */}
@@ -875,7 +935,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   genderButtonActive: {
-    borderWidth: 2,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   genderButtonText: {
     fontSize: theme.typography.caption,
@@ -885,6 +946,46 @@ const styles = StyleSheet.create({
   genderButtonTextActive: {
     color: theme.colors.textPrimary,
     fontWeight: theme.typography.bold,
+  },
+
+  // Type
+  typeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  typeButton: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  typeButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  typeButtonText: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.medium,
+  },
+  typeButtonTextActive: {
+    color: theme.colors.textPrimary,
+    fontWeight: theme.typography.bold,
+  },
+  // Note search
+  noteSearchInput: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    fontSize: theme.typography.body,
+    color: theme.colors.textPrimary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
 
   // Rating

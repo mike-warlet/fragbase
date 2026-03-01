@@ -60,7 +60,7 @@ export async function handleGetChallenge(request, env, challengeId) {
 
     // Get entries with vote counts, sorted by votes
     const { results: entries } = await env.DB.prepare(
-      `SELECT ce.*, u.display_name, u.username, u.avatar_url,
+      `SELECT ce.*, COALESCE(u.display_name, u.name) as display_name, u.username, u.avatar_url,
               p.name as perfume_name, p.brand as perfume_brand, p.image_url as perfume_image
        FROM challenge_entries ce
        JOIN users u ON ce.user_id = u.id

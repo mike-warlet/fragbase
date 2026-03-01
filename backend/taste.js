@@ -119,7 +119,7 @@ export async function handleGetTasteTwins(request, env) {
     const twins = [];
     for (const twin of topTwins) {
       const user = await env.DB.prepare(
-        'SELECT id, display_name, username, avatar_url, bio FROM users WHERE id = ?'
+        'SELECT id, COALESCE(display_name, name) as display_name, username, avatar_url, bio FROM users WHERE id = ?'
       ).bind(twin.user_id).first();
 
       if (user) {

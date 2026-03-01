@@ -129,6 +129,15 @@ test_endpoint GET "/api/search?type=perfumes&q=chanel" "200"
 test_endpoint GET "/api/search?type=users&q=test" "200"
 test_endpoint GET "/api/discovery/quiz" "200" "" "auth"
 
+# --- Advanced Search Filters ---
+echo ""
+echo "--- Advanced Search Filters ---"
+test_endpoint GET "/api/search?type=perfumes&q=dior&sort=rating" "200"
+test_endpoint GET "/api/search?type=perfumes&note=vanilla" "200"
+test_endpoint GET "/api/search?type=perfumes&type_filter=Eau%20de%20Parfum&q=chanel" "200"
+test_endpoint GET "/api/search?type=perfumes&year_min=2000&year_max=2020" "200"
+test_endpoint GET "/api/filters/options" "200"
+
 # --- Compare ---
 echo ""
 echo "--- Compare ---"

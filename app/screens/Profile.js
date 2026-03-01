@@ -7,23 +7,39 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { apiCall } from '../config';
 import { useAuth } from '../AuthContext';
-import { colors, typography, spacing, borderRadius, shadows } from '../theme';
+import { colors, typography, spacing, borderRadius } from '../theme';
 
 export default function Profile({ navigation }) {
   const { logout, user: authUser } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [levelInfo, setLevelInfo] = useState(null);
 
   useEffect(() => {
     fetchProfile();
+    fetchStats();
     const unsubscribe = navigation.addListener('focus', () => {
       fetchProfile();
+      fetchStats();
     });
     return unsubscribe;
   }, [navigation]);
+
+  const fetchStats = async () => {
+    try {
+      const [statsData, levelData] = await Promise.all([
+        apiCall('/api/gamification/stats').catch(() => null),
+        apiCall(`/api/gamification/level/${authUser?.id}`).catch(() => null),
+      ]);
+      if (statsData) setStats(statsData);
+      if (levelData) setLevelInfo(levelData);
+    } catch (e) {}
+  };
 
   const fetchProfile = async () => {
     try {
@@ -77,7 +93,7 @@ export default function Profile({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         {user.avatar_url ? (
@@ -108,6 +124,32 @@ export default function Profile({ navigation }) {
             <Text style={styles.statLabel}>Seguindo</Text>
           </View>
         </View>
+
+        {/* XP & Level Stats */}
+        {levelInfo && (
+          <TouchableOpacity
+            style={styles.levelRow}
+            onPress={() => navigation.navigate('Badges')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelNumber}>{levelInfo.level || 1}</Text>
+            </View>
+            <View style={styles.levelInfo}>
+              <Text style={styles.levelTitle}>{levelInfo.title || 'Iniciante'}</Text>
+              <View style={styles.xpBar}>
+                <View style={[styles.xpFill, { width: `${Math.min(100, ((levelInfo.xp || 0) / (levelInfo.next_level_xp || 100)) * 100)}%` }]} />
+              </View>
+              <Text style={styles.xpText}>{levelInfo.xp || 0} / {levelInfo.next_level_xp || 100} XP</Text>
+            </View>
+            {stats?.badges_earned > 0 && (
+              <View style={styles.badgeCount}>
+                <Text style={styles.badgeCountText}>{stats.badges_earned}</Text>
+                <Text style={styles.badgeCountLabel}>badges</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Edit Profile Button */}
         <TouchableOpacity
@@ -234,7 +276,7 @@ export default function Profile({ navigation }) {
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -325,6 +367,66 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  levelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: colors.backgroundLight,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    gap: spacing.md,
+  },
+  levelBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  levelNumber: {
+    fontSize: typography.h4,
+    fontWeight: typography.bold,
+    color: '#fff',
+  },
+  levelInfo: {
+    flex: 1,
+  },
+  levelTitle: {
+    fontSize: typography.body,
+    fontWeight: typography.semibold,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  xpBar: {
+    height: 6,
+    backgroundColor: colors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  xpFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 3,
+  },
+  xpText: {
+    fontSize: typography.small,
+    color: colors.textTertiary,
+  },
+  badgeCount: {
+    alignItems: 'center',
+  },
+  badgeCountText: {
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
+    color: colors.warning,
+  },
+  badgeCountLabel: {
+    fontSize: typography.small,
+    color: colors.textTertiary,
   },
   editButton: {
     backgroundColor: colors.primary,
