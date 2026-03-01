@@ -58,6 +58,7 @@ function getXpProgress(totalXp, level) {
 }
 
 const PODIUM_TROPHIES = ['\uD83E\uDD48', '\uD83C\uDFC6', '\uD83E\uDD49']; // 2nd, 1st, 3rd
+const LEADERBOARD_ITEM_HEIGHT = 73;
 
 export default function LeaderboardScreen({ navigation }) {
   const { user: currentUser } = useAuth();
@@ -70,13 +71,16 @@ export default function LeaderboardScreen({ navigation }) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    fetchLeaderboard();
+    const controller = new AbortController();
+    fetchLeaderboard(1, controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const fetchLeaderboard = async (pageNum = 1) => {
+  const fetchLeaderboard = async (pageNum = 1, signal) => {
     try {
       setError(null);
       const data = await apiCall(`/api/gamification/leaderboard?page=${pageNum}&limit=50`);
+      if (signal?.aborted) return;
       const entries = data.leaderboard || [];
       if (pageNum === 1) {
         setLeaderboard(entries);
@@ -86,12 +90,15 @@ export default function LeaderboardScreen({ navigation }) {
       setHasMore(entries.length >= 50);
       setPage(pageNum);
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Failed to load leaderboard:', err);
       setError('Falha ao carregar leaderboard');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   };
 
@@ -267,6 +274,11 @@ export default function LeaderboardScreen({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
+        getItemLayout={(data, index) => ({
+          length: LEADERBOARD_ITEM_HEIGHT,
+          offset: LEADERBOARD_ITEM_HEIGHT * index,
+          index,
+        })}
         ListHeaderComponent={renderPodium}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

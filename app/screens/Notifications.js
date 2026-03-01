@@ -26,6 +26,8 @@ const MESSAGES = {
   review_like: 'gostou da tua review',
 };
 
+const NOTIFICATION_ITEM_HEIGHT = 80;
+
 function timeAgo(dateStr) {
   const now = Date.now();
   const date = new Date(dateStr).getTime();
@@ -44,18 +46,24 @@ export default function NotificationsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchNotifications();
+    const controller = new AbortController();
+    fetchNotifications(controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (signal) => {
     try {
       const data = await apiCall('/api/notifications');
+      if (signal?.aborted) return;
       setNotifications(data.notifications || []);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to load notifications:', error);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
@@ -126,6 +134,11 @@ export default function NotificationsScreen({ navigation }) {
         data={notifications}
         keyExtractor={(item, index) => `${item.type}-${item.actor_id}-${index}`}
         renderItem={renderNotification}
+        getItemLayout={(data, index) => ({
+          length: NOTIFICATION_ITEM_HEIGHT,
+          offset: NOTIFICATION_ITEM_HEIGHT * index,
+          index,
+        })}
         contentContainerStyle={notifications.length === 0 ? styles.emptyList : undefined}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />

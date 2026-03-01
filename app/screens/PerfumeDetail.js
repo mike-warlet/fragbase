@@ -34,33 +34,39 @@ export default function PerfumeDetailScreen({ route, navigation }) {
   const [statementRating, setStatementRating] = useState(8);
 
   useEffect(() => {
-    loadPerfume();
-    loadReviews();
-    loadVotingData();
-    loadNewFeatures();
+    const controller = new AbortController();
+    loadPerfume(controller.signal);
+    loadReviews(controller.signal);
+    loadVotingData(controller.signal);
+    loadNewFeatures(controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const loadPerfume = async () => {
+  const loadPerfume = async (signal) => {
     try {
       const data = await apiCall(`/api/perfumes/${perfumeId}`);
+      if (signal?.aborted) return;
       setPerfume(data.perfume || null);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Error loading perfume:', error);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
-  const loadReviews = async () => {
+  const loadReviews = async (signal) => {
     try {
       const data = await apiCall(`/api/perfumes/${perfumeId}/reviews`);
+      if (signal?.aborted) return;
       setReviews(data.reviews || []);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Error loading reviews:', error);
     }
   };
 
-  const loadVotingData = async () => {
+  const loadVotingData = async (signal) => {
     try {
       const [notesData, accordsData, perfData, seasonData, wishlistData] = await Promise.allSettled([
         apiCall(`/api/perfumes/${perfumeId}/notes/votes`),
@@ -70,27 +76,31 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         apiCall(`/api/perfumes/${perfumeId}/wishlist-status`).catch(() => ({ status: {}, counts: {} })),
       ]);
 
+      if (signal?.aborted) return;
       if (notesData.status === 'fulfilled') setNoteVotes(notesData.value);
       if (accordsData.status === 'fulfilled') setAccordVotes(accordsData.value);
       if (perfData.status === 'fulfilled') setPerformanceVotes(perfData.value);
       if (seasonData.status === 'fulfilled') setSeasonVotes(seasonData.value);
       if (wishlistData.status === 'fulfilled') setWishlistStatus(wishlistData.value);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Error loading voting data:', error);
     }
   };
 
-  const loadNewFeatures = async () => {
+  const loadNewFeatures = async (signal) => {
     try {
       const [stmts, nosesData, recsData] = await Promise.allSettled([
         apiCall(`/api/perfumes/${perfumeId}/statements`),
         apiCall(`/api/perfumes/${perfumeId}/noses`),
         apiCall(`/api/perfumes/${perfumeId}/recommendations`),
       ]);
+      if (signal?.aborted) return;
       if (stmts.status === 'fulfilled') setStatements(stmts.value?.statements || []);
       if (nosesData.status === 'fulfilled') setNoses(nosesData.value?.perfumers || []);
       if (recsData.status === 'fulfilled') setUserRecs(recsData.value?.recommendations || []);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Error loading new features:', error);
     }
   };
@@ -281,11 +291,21 @@ export default function PerfumeDetailScreen({ route, navigation }) {
           {perfume.concentration && <Text style={styles.metaText}>{perfume.concentration}</Text>}
         </View>
         {perfume.perfumer && (
-          <Text style={styles.perfumer}>Por {perfume.perfumer}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Search', { query: perfume.perfumer })}>
+            <Text style={styles.perfumer}>Por <Text style={styles.perfumerLink}>{perfume.perfumer}</Text></Text>
+          </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.shareButton} onPress={handleSharePerfume}>
-          <Text style={styles.shareButtonText}>Partilhar</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.shareButton} onPress={handleSharePerfume}>
+            <Text style={styles.shareButtonText}>Partilhar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={() => navigation.navigate('IngredientDetail', {})}
+          >
+            <Text style={styles.shareButtonText}>Ingredientes</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 3. Community Rating */}
@@ -610,9 +630,16 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontStyle: 'italic',
   },
-  shareButton: {
-    alignSelf: 'flex-start',
+  perfumerLink: {
+    color: theme.colors.primary,
+    textDecorationLine: 'underline',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
     marginTop: theme.spacing.sm,
+  },
+  shareButton: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.xs + 2,
     backgroundColor: theme.colors.surfaceLight,

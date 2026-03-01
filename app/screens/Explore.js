@@ -26,10 +26,12 @@ export default function ExploreScreen({ navigation }) {
   const [showQuizBanner, setShowQuizBanner] = useState(false);
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (signal) => {
     setError(null);
     try {
       const [exploreData, profileData, trendingData] = await Promise.allSettled([
@@ -37,6 +39,8 @@ export default function ExploreScreen({ navigation }) {
         apiCall('/api/discovery/profile'),
         apiCall(`/api/perfumes/trending?period=${trendingPeriod}&limit=10`),
       ]);
+
+      if (signal?.aborted) return;
 
       if (exploreData.status === 'fulfilled') {
         setSections(exploreData.value.sections || []);
@@ -55,11 +59,14 @@ export default function ExploreScreen({ navigation }) {
         setShowQuizBanner(true);
       }
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Error loading explore:', err);
       setError('Failed to load explore data');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
@@ -212,6 +219,24 @@ export default function ExploreScreen({ navigation }) {
         </View>
       </TouchableOpacity>
 
+      {/* Ingredient Encyclopedia banner */}
+      <TouchableOpacity
+        style={styles.ingredientBanner}
+        onPress={() => navigation.navigate('IngredientDetail', {})}
+        activeOpacity={0.8}
+      >
+        <View style={styles.compassBannerContent}>
+          <Text style={styles.compassBannerIcon}>{'#'}</Text>
+          <View style={styles.compassBannerText}>
+            <Text style={styles.compassBannerTitle}>Enciclopedia de Ingredientes</Text>
+            <Text style={styles.compassBannerSubtitle}>
+              Descobre notas, acordes e combinacoes
+            </Text>
+          </View>
+          <Text style={styles.compassBannerArrow}>{'>'}</Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Trending section */}
       {trending.length > 0 && (
         <View style={styles.section}>
@@ -327,6 +352,16 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: colors.primary,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  ingredientBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
     overflow: 'hidden',
     ...shadows.sm,
   },

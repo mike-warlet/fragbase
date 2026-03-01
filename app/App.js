@@ -47,6 +47,7 @@ import PerfumerProfileScreen from './screens/PerfumerProfile';
 import CollectionAnalyticsScreen from './screens/CollectionAnalytics';
 import ScentCompassScreen from './screens/ScentCompass';
 import TasteProfileScreen from './screens/TasteProfile';
+import IngredientDetailScreen from './screens/IngredientDetail';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -320,6 +321,11 @@ function MainStack() {
         name="TasteProfile"
         component={TasteProfileScreen}
         options={{ title: 'Perfil Olfativo' }}
+      />
+      <Stack.Screen
+        name="IngredientDetail"
+        component={IngredientDetailScreen}
+        options={{ title: 'Ingredientes' }}
       />
     </Stack.Navigator>
   );

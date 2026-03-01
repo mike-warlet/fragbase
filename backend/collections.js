@@ -313,6 +313,50 @@ export async function handleAddPerfumeToCollection(request, env, collectionId) {
   }
 }
 
+// Get collection share data (public, no auth required)
+export async function handleShareCollection(request, env, collectionId) {
+  try {
+    const collection = await env.DB.prepare(`
+      SELECT c.*, u.username, COALESCE(u.display_name, u.name) as owner_name
+      FROM collections c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.id = ? AND c.is_public = 1
+    `).bind(collectionId).first();
+
+    if (!collection) {
+      return new Response(JSON.stringify({ error: 'Collection not found or is private' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const perfumes = await env.DB.prepare(`
+      SELECT p.id, p.name, p.brand, p.year, p.type, p.image_url,
+        (SELECT ROUND(AVG(rating), 1) FROM reviews WHERE perfume_id = p.id) as avg_rating,
+        (SELECT COUNT(*) FROM reviews WHERE perfume_id = p.id) as review_count
+      FROM collections_perfumes cp
+      JOIN perfumes p ON cp.perfume_id = p.id
+      WHERE cp.collection_id = ?
+      ORDER BY p.brand, p.name
+    `).bind(collectionId).all();
+
+    return Response.json({
+      collection: {
+        id: collection.id,
+        name: collection.name,
+        description: collection.description,
+        owner: collection.owner_name,
+        username: collection.username,
+        perfume_count: perfumes.results.length,
+      },
+      perfumes: perfumes.results,
+      share_url: `https://fragbase.app/collection/${collectionId}`,
+    });
+  } catch (error) {
+    return Response.json({ error: 'Failed to share collection' }, { status: 500 });
+  }
+}
+
 // Remove perfume from collection
 export async function handleRemovePerfumeFromCollection(request, env, collectionId, perfumeId) {
   const user = await authenticate(request, env);

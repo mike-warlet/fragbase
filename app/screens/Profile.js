@@ -21,31 +21,38 @@ export default function Profile({ navigation }) {
   const [levelInfo, setLevelInfo] = useState(null);
 
   useEffect(() => {
-    fetchProfile();
-    fetchStats();
+    const controller = new AbortController();
+    fetchProfile(controller.signal);
+    fetchStats(controller.signal);
     const unsubscribe = navigation.addListener('focus', () => {
       fetchProfile();
       fetchStats();
     });
-    return unsubscribe;
+    return () => {
+      controller.abort();
+      unsubscribe();
+    };
   }, [navigation]);
 
-  const fetchStats = async () => {
+  const fetchStats = async (signal) => {
     try {
       const [statsData, levelData] = await Promise.all([
         apiCall('/api/gamification/stats').catch(() => null),
         apiCall(`/api/gamification/level/${authUser?.id}`).catch(() => null),
       ]);
+      if (signal?.aborted) return;
       if (statsData) setStats(statsData);
       if (levelData) setLevelInfo(levelData);
     } catch (e) {}
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (signal) => {
     try {
       const data = await apiCall('/api/auth/me');
+      if (signal?.aborted) return;
       setUser(data.user || data);
     } catch (error) {
+      if (signal?.aborted) return;
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         Alert.alert('Sessao expirada', 'Por favor faca login novamente.', [
           { text: 'OK', onPress: logout },
@@ -54,7 +61,7 @@ export default function Profile({ navigation }) {
         Alert.alert('Erro', 'Falha ao carregar perfil');
       }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 

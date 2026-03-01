@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Share,
 } from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius } from '../theme';
@@ -56,6 +57,21 @@ export default function CollectionDetail({ route, navigation }) {
         },
       ]
     );
+  };
+
+  const handleShareCollection = async () => {
+    try {
+      const data = await apiCall(`/api/collections/${collectionId}/share`);
+      const perfumeList = data.perfumes.slice(0, 5).map(p => `  - ${p.name} (${p.brand})`).join('\n');
+      const more = data.perfumes.length > 5 ? `\n  ...e mais ${data.perfumes.length - 5}` : '';
+      await Share.share({
+        message: `${data.collection.name} por @${data.collection.username}\n${data.collection.perfume_count} perfumes\n\n${perfumeList}${more}\n\nDescobre no Fragbase!`,
+      });
+    } catch (error) {
+      if (error.message !== 'User did not share') {
+        Alert.alert('Erro', 'Falha ao partilhar colecao');
+      }
+    }
   };
 
   const handleDeleteCollection = () => {
@@ -110,9 +126,16 @@ export default function CollectionDetail({ route, navigation }) {
               </View>
             )}
           </View>
-          <TouchableOpacity onPress={handleDeleteCollection}>
-            <Text style={styles.deleteButton}>🗑️</Text>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            {collection.is_public === 1 && (
+              <TouchableOpacity onPress={handleShareCollection}>
+                <Text style={styles.actionIcon}>📤</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={handleDeleteCollection}>
+              <Text style={styles.actionIcon}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         {collection.description && (
           <Text style={styles.description}>{collection.description}</Text>
@@ -213,7 +236,11 @@ const styles = StyleSheet.create({
     fontSize: typography.small + 1,
     color: colors.warning,
   },
-  deleteButton: {
+  headerButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionIcon: {
     fontSize: 24,
     padding: spacing.xs,
   },

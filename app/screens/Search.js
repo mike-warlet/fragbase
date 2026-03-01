@@ -76,8 +76,10 @@ export default function SearchScreen({ navigation }) {
 
   // Load filter options on mount
   useEffect(() => {
-    loadFilterOptions();
-    loadPerfumes();
+    const controller = new AbortController();
+    loadFilterOptions(controller.signal);
+    loadPerfumes(controller.signal);
+    return () => controller.abort();
   }, []);
 
   // Debounced search when query or filters change
@@ -119,28 +121,32 @@ export default function SearchScreen({ navigation }) {
     return count;
   }, [selectedBrand, selectedGender, selectedType, noteSearch, yearMin, yearMax, minRating, selectedAccords, sort]);
 
-  const loadFilterOptions = async () => {
+  const loadFilterOptions = async (signal) => {
     setLoadingOptions(true);
     try {
       const data = await apiCall('/api/filters/options');
+      if (signal?.aborted) return;
       setFilterOptions(data);
     } catch (error) {
+      if (signal?.aborted) return;
       // Filter options are non-critical, fail silently
     } finally {
-      setLoadingOptions(false);
+      if (!signal?.aborted) setLoadingOptions(false);
     }
   };
 
-  const loadPerfumes = async () => {
+  const loadPerfumes = async (signal) => {
     setLoading(true);
     try {
       const data = await apiCall('/api/perfumes?limit=50');
+      if (signal?.aborted) return;
       setResults(data.perfumes || []);
       setInitialLoad(false);
     } catch (error) {
+      if (signal?.aborted) return;
       Alert.alert('Erro', 'Falha ao carregar perfumes. Tente novamente.');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 

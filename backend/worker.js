@@ -6,7 +6,7 @@ import { handleGetUser, handleUpdateUser, handleGetUserReviews, handleFollowUser
 import { handleGetFeed, handleCreatePost, handleDeletePost, handleLikePost, handleGetComments, handleCreateComment, handleDeleteComment } from './posts.js';
 import { handleGetConversations, handleGetMessages, handleSendMessage, handleMarkAsRead, handleGetNewMessages, handleTypingIndicator, handleGetChatStatus, handleMessageReaction, handleRemoveReaction } from './messages.js';
 import { handleUploadImage, handleGetImage, handleDeleteImage } from './images.js';
-import { handleGetCollections, handleGetCollection, handleCreateCollection, handleUpdateCollection, handleDeleteCollection, handleAddPerfumeToCollection, handleRemovePerfumeFromCollection } from './collections.js';
+import { handleGetCollections, handleGetCollection, handleCreateCollection, handleUpdateCollection, handleDeleteCollection, handleAddPerfumeToCollection, handleRemovePerfumeFromCollection, handleShareCollection } from './collections.js';
 import { handleNoteVote, handleGetNoteVotes, handleAccordVote, handleGetAccordVotes,
          handlePerformanceVote, handleGetPerformanceVotes, handleSeasonVote, handleGetSeasonVotes,
          handleGetSimilarPerfumes, handleAddToWishlist, handleRemoveFromWishlist,
@@ -423,7 +423,11 @@ export default {
         const perfumeId = path.match(/^\/api\/collections\/([^\/]+)\/perfumes\/([^\/]+)$/)[2];
         response = await handleRemovePerfumeFromCollection(request, env, collectionId, perfumeId);
       }
-      
+      else if (path.match(/^\/api\/collections\/([^\/]+)\/share$/) && method === 'GET') {
+        const collectionId = path.match(/^\/api\/collections\/([^\/]+)\/share$/)[1];
+        response = await handleShareCollection(request, env, collectionId);
+      }
+
       // Discovery Engine routes
       else if (path === '/api/discovery/quiz' && method === 'GET') {
         response = await handleGetQuiz(request, env);

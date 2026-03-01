@@ -27,8 +27,10 @@ export default function HomeScreen({ navigation }) {
   const [feedFilter, setFeedFilter] = useState('all'); // all, sotd, general
 
   useEffect(() => {
-    loadFeed(1, true);
+    const controller = new AbortController();
+    loadFeed(1, true, controller.signal);
     checkNewUser();
+    return () => controller.abort();
   }, [feedFilter]);
 
   const checkNewUser = async () => {
@@ -43,12 +45,13 @@ export default function HomeScreen({ navigation }) {
     await AsyncStorage.removeItem('isNewUser');
   };
 
-  const loadFeed = async (p = 1, reset = false) => {
+  const loadFeed = async (p = 1, reset = false, signal) => {
     if (!reset && loadingMore) return;
     try {
       setError(null);
       const typeParam = feedFilter !== 'all' ? `&type=${feedFilter}` : '';
       const data = await apiCall(`/api/posts?page=${p}&limit=15${typeParam}`);
+      if (signal?.aborted) return;
       const newPosts = data.posts || [];
       if (reset) {
         setPosts(newPosts);
@@ -58,6 +61,7 @@ export default function HomeScreen({ navigation }) {
       setHasMore(newPosts.length >= 15);
       setPage(p);
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Error loading feed:', err);
       if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
         Alert.alert('Sessao expirada', 'Por favor faca login novamente.', [
@@ -67,9 +71,11 @@ export default function HomeScreen({ navigation }) {
         setError('Falha ao carregar o feed. Puxe para baixo para tentar novamente.');
       }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   };
 
