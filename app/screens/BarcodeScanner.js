@@ -153,7 +153,7 @@ export default function BarcodeScannerScreen({ navigation }) {
           <FlatList
             data={results}
             renderItem={renderResult}
-            keyExtractor={item => item.id}
+            keyExtractor={item => String(item.id)}
           />
         </View>
       )}

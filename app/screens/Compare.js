@@ -47,6 +47,10 @@ export default function CompareScreen({ route, navigation }) {
 
   const searchTimer = useRef(null);
 
+  useEffect(() => {
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, []);
+
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     if (searchTimer.current) clearTimeout(searchTimer.current);

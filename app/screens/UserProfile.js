@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,8 +25,12 @@ export default function UserProfile({ route, navigation }) {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [tasteMatch, setTasteMatch] = useState(null);
 
+  const mountedRef = useRef(true);
+
   useEffect(() => {
+    mountedRef.current = true;
     fetchData();
+    return () => { mountedRef.current = false; };
   }, [userId]);
 
   const fetchData = async () => {
@@ -38,9 +42,9 @@ export default function UserProfile({ route, navigation }) {
         apiCall('/api/auth/me'),
       ]);
 
-      // Load taste match asynchronously
+      // Load taste match asynchronously with unmount safety
       apiCall(`/api/taste-match/${userId}`).then(data => {
-        setTasteMatch(data);
+        if (mountedRef.current) setTasteMatch(data);
       }).catch(() => {});
 
       setUser(userData?.user || userData);

@@ -177,7 +177,7 @@ export default function MarketplaceScreen({ navigation }) {
         <FlatList
           data={listings}
           renderItem={renderListing}
-          keyExtractor={item => item.id}
+          keyExtractor={item => String(item.id)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.3}

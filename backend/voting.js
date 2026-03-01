@@ -502,7 +502,10 @@ export async function handleGetMyWishlists(request, env) {
     const url = new URL(request.url);
     const type = url.searchParams.get('type');
 
-    let query = `SELECT w.*, p.name as perfume_name, p.brand as perfume_brand, p.image_url as perfume_image
+    let query = `SELECT w.*, p.name as perfume_name, p.brand as perfume_brand, p.image_url as perfume_image,
+                        p.year as perfume_year, p.notes_top as perfume_notes_top,
+                        p.notes_heart as perfume_notes_heart, p.notes_base as perfume_notes_base,
+                        p.accords as perfume_accords, p.gender as perfume_gender
                  FROM wishlists w
                  JOIN perfumes p ON w.perfume_id = p.id
                  WHERE w.user_id = ?`;

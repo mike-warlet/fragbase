@@ -195,7 +195,7 @@ export default function LeaderboardScreen({ navigation }) {
     );
   };
 
-  const renderListItem = ({ item, index }) => {
+  const renderListItem = useCallback(({ item, index }) => {
     const rank = index + 4; // starts after top 3
     const isCurrentUser =
       currentUserId && String(item.user?.id) === String(currentUserId);
@@ -235,7 +235,7 @@ export default function LeaderboardScreen({ navigation }) {
         <Text style={styles.xpLabel}>XP</Text>
       </TouchableOpacity>
     );
-  };
+  }, [currentUserId, navigation]);
 
   if (loading) {
     return (

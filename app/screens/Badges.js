@@ -113,7 +113,7 @@ export default function BadgesScreen({ navigation }) {
     data: grouped[key],
   }));
 
-  const renderBadge = ({ item }) => {
+  const renderBadge = useCallback(({ item }) => {
     const rarityColor = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
     const earned = item.earned;
 
@@ -171,7 +171,7 @@ export default function BadgesScreen({ navigation }) {
         </View>
       </View>
     );
-  };
+  }, []);
 
   const renderSectionHeader = ({ section }) => (
     <View style={styles.sectionHeader}>

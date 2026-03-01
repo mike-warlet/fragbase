@@ -669,7 +669,7 @@ export default function SearchScreen({ navigation }) {
         <FlatList
           data={results}
           renderItem={renderPerfume}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}

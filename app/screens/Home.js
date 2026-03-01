@@ -153,7 +153,7 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const renderPost = ({ item }) => (
+  const renderPost = useCallback(({ item }) => (
     <View style={[styles.postCard, item.type === 'sotd' && styles.sotdPostCard]}>
       {/* SOTD badge */}
       {item.type === 'sotd' && (
@@ -253,7 +253,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       )}
     </View>
-  );
+  ), [navigation, comments, expandedComments, commentText]);
 
   if (loading) {
     return (

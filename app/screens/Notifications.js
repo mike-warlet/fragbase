@@ -74,7 +74,7 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
-  const renderNotification = ({ item, index }) => (
+  const renderNotification = useCallback(({ item, index }) => (
     <TouchableOpacity
       style={styles.notifCard}
       onPress={() => handlePress(item)}
@@ -110,7 +110,7 @@ export default function NotificationsScreen({ navigation }) {
         <Text style={styles.timeText}>{timeAgo(item.created_at)}</Text>
       </View>
     </TouchableOpacity>
-  );
+  ), [navigation]);
 
   if (loading) {
     return (

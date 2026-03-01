@@ -55,7 +55,7 @@ export default function PerfumerProfileScreen({ route, navigation }) {
     <FlatList
       data={fragrances}
       renderItem={renderFragrance}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => String(item.id)}
       numColumns={2}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.list}

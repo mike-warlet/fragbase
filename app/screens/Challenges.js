@@ -85,7 +85,7 @@ export default function ChallengesScreen({ navigation }) {
       ) : (
         <FlatList
           data={challenges}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
           renderItem={renderChallenge}
           contentContainerStyle={challenges.length === 0 ? styles.center : styles.list}
           ListEmptyComponent={

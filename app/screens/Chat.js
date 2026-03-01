@@ -242,7 +242,7 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
-  const renderMessage = ({ item, index }) => {
+  const renderMessage = useCallback(({ item, index }) => {
     const isMe = item.from_user_id === currentUserId;
     const showDate = index === 0 ||
       new Date(item.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
@@ -266,7 +266,7 @@ export default function ChatScreen({ route, navigation }) {
         />
       </View>
     );
-  };
+  }, [currentUserId, messages, handleReact, reactions]);
 
   if (loading) {
     return (
@@ -286,7 +286,7 @@ export default function ChatScreen({ route, navigation }) {
         ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.messagesList}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
