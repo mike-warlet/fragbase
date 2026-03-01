@@ -114,6 +114,66 @@ else
   echo "  SKIP: No perfume ID available"
 fi
 
+# --- Ingredients ---
+echo ""
+echo "--- Ingredients ---"
+test_endpoint GET "/api/ingredients" "200"
+test_endpoint GET "/api/ingredients?category=floral" "200"
+test_endpoint GET "/api/ingredients?q=rose" "200"
+test_endpoint GET "/api/ingredients/search?note=vanilla" "200"
+
+# --- Search & Discovery ---
+echo ""
+echo "--- Search & Discovery ---"
+test_endpoint GET "/api/search?type=perfumes&q=chanel" "200"
+test_endpoint GET "/api/search?type=users&q=test" "200"
+test_endpoint GET "/api/discovery/quiz" "200" "" "auth"
+
+# --- Compare ---
+echo ""
+echo "--- Compare ---"
+if [ -n "$PERFUME_ID" ]; then
+  test_endpoint GET "/api/perfumes/compare?ids=$PERFUME_ID,$PERFUME_ID" "200"
+fi
+
+# --- Diary & Stats ---
+echo ""
+echo "--- Diary & Stats ---"
+test_endpoint GET "/api/diary/calendar?year=2026&month=3" "200" "" "auth"
+test_endpoint GET "/api/diary/stats" "200" "" "auth"
+
+# --- Layering ---
+echo ""
+echo "--- Layering ---"
+test_endpoint GET "/api/layering" "200" "" "auth"
+
+# --- Gamification ---
+echo ""
+echo "--- Gamification ---"
+test_endpoint GET "/api/gamification/stats" "200" "" "auth"
+test_endpoint POST "/api/gamification/check" "200" "" "auth"
+
+# --- Taste Profile ---
+echo ""
+echo "--- Taste Profile ---"
+test_endpoint GET "/api/discovery/profile" "200" "" "auth"
+
+# --- Write Operations ---
+echo ""
+echo "--- Write Operations ---"
+test_endpoint POST "/api/posts" "201" '{"text":"Test post from API test suite"}' "auth"
+if [ -n "$PERFUME_ID" ]; then
+  test_endpoint POST "/api/perfumes/$PERFUME_ID/accords/vote" "200" '{"accord_name":"woody","strength":3}' "auth"
+  test_endpoint POST "/api/perfumes/$PERFUME_ID/season/vote" "200" '{"season":"winter","value":1}' "auth"
+fi
+
+# --- Error Handling ---
+echo ""
+echo "--- Error Handling ---"
+test_endpoint GET "/api/perfumes/nonexistent999" "404"
+test_endpoint GET "/api/auth/me" "401"
+test_endpoint POST "/api/posts" "401" '{"text":"no auth"}'
+
 # --- Summary ---
 echo ""
 echo "=============================="

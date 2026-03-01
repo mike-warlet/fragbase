@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, StyleSheet, RefreshControl,
   TouchableOpacity, Image, TextInput, ActivityIndicator, Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiCall } from '../config';
 import { useAuth } from '../AuthContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
@@ -22,10 +23,24 @@ export default function HomeScreen({ navigation }) {
   const [expandedComments, setExpandedComments] = useState({});
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState({});
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     loadFeed(1, true);
+    checkNewUser();
   }, []);
+
+  const checkNewUser = async () => {
+    try {
+      const isNew = await AsyncStorage.getItem('isNewUser');
+      if (isNew === 'true') setShowWelcome(true);
+    } catch (e) {}
+  };
+
+  const dismissWelcome = async () => {
+    setShowWelcome(false);
+    await AsyncStorage.removeItem('isNewUser');
+  };
 
   const loadFeed = async (p = 1, reset = false) => {
     if (!reset && loadingMore) return;
@@ -256,7 +271,20 @@ export default function HomeScreen({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={<><ErrorBoundary><SmartPickCard navigation={navigation} /></ErrorBoundary><ErrorBoundary><SOTDBanner navigation={navigation} /></ErrorBoundary></>}
+        ListHeaderComponent={<>{showWelcome && (
+          <View style={styles.welcomeCard}>
+            <Text style={styles.welcomeTitle}>Bem-vindo ao FragBase!</Text>
+            <Text style={styles.welcomeText}>Descobre o teu perfil olfativo com o nosso quiz e recebe recomendacoes personalizadas.</Text>
+            <View style={styles.welcomeActions}>
+              <TouchableOpacity style={styles.welcomeBtn} onPress={() => { dismissWelcome(); navigation.navigate('ScentQuiz'); }}>
+                <Text style={styles.welcomeBtnText}>Fazer Quiz</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={dismissWelcome}>
+                <Text style={styles.welcomeDismiss}>Mais tarde</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}<ErrorBoundary><SmartPickCard navigation={navigation} /></ErrorBoundary><ErrorBoundary><SOTDBanner navigation={navigation} /></ErrorBoundary></>}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
@@ -493,6 +521,44 @@ const styles = StyleSheet.create({
   retryText: {
     color: colors.textPrimary,
     fontWeight: typography.semibold,
+  },
+  welcomeCard: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  welcomeTitle: {
+    fontSize: typography.h4,
+    fontWeight: typography.bold,
+    color: '#fff',
+    marginBottom: spacing.xs,
+  },
+  welcomeText: {
+    fontSize: typography.body,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  welcomeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  welcomeBtn: {
+    backgroundColor: '#fff',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+  },
+  welcomeBtnText: {
+    color: colors.primary,
+    fontWeight: typography.bold,
+    fontSize: typography.body,
+  },
+  welcomeDismiss: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: typography.body,
   },
   fab: {
     position: 'absolute',

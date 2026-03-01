@@ -75,6 +75,7 @@ export function AuthProvider({ children }) {
     }
     await AsyncStorage.setItem('token', data.token);
     await AsyncStorage.setItem('user', JSON.stringify(data.user));
+    await AsyncStorage.setItem('isNewUser', 'true');
     setToken(data.token);
     setUser(data.user);
     return data;

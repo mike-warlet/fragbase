@@ -15,7 +15,7 @@ export async function handleGetLayeringSuggestions(request, env, perfumeId) {
       `SELECT lc.*,
               p1.name as perfume1_name, p1.brand as perfume1_brand, p1.image_url as perfume1_image,
               p2.name as perfume2_name, p2.brand as perfume2_brand, p2.image_url as perfume2_image,
-              u.display_name as suggested_by_name, u.username as suggested_by_username
+              u.name as suggested_by_name, u.username as suggested_by_username
        FROM layering_combos lc
        JOIN perfumes p1 ON lc.perfume_id_1 = p1.id
        JOIN perfumes p2 ON lc.perfume_id_2 = p2.id
@@ -149,7 +149,7 @@ export async function handleGetTopLayeringCombos(request, env) {
       `SELECT lc.*,
               p1.name as perfume1_name, p1.brand as perfume1_brand, p1.image_url as perfume1_image,
               p2.name as perfume2_name, p2.brand as perfume2_brand, p2.image_url as perfume2_image,
-              u.display_name as suggested_by_name, u.username as suggested_by_username
+              u.name as suggested_by_name, u.username as suggested_by_username
        FROM layering_combos lc
        JOIN perfumes p1 ON lc.perfume_id_1 = p1.id
        JOIN perfumes p2 ON lc.perfume_id_2 = p2.id
