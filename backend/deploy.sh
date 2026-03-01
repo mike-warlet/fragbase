@@ -50,6 +50,9 @@ MIGRATIONS=(
     "021-perfumes-batch1.sql"
     "022-perfumes-batch2.sql"
     "023-perfumes-batch3.sql"
+    "024-fix-follows-created-at.sql"
+    "025-perfumes-batch4.sql"
+    "026-perfumes-batch5.sql"
 )
 
 for migration in "${MIGRATIONS[@]}"; do

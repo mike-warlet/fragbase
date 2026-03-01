@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Text, ActivityIndicator, View, StatusBar } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, useAuth } from './AuthContext';
+import { apiCall } from './config';
 import ErrorBoundary from './components/ErrorBoundary';
 import { colors } from './theme';
 
@@ -69,6 +70,25 @@ const screenOptions = {
 };
 
 function MainTabs() {
+  const { isLoggedIn } = useAuth();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!isLoggedIn) return;
+    try {
+      const data = await apiCall('/api/messages/conversations');
+      const convos = data.conversations || [];
+      const unread = convos.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+      setUnreadMessages(unread);
+    } catch (e) {}
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -113,7 +133,10 @@ function MainTabs() {
           title: 'Mensagens',
           tabBarLabel: 'Mensagens',
           tabBarIcon: () => <Text style={{ fontSize: 24 }}>💬</Text>,
+          tabBarBadge: unreadMessages > 0 ? unreadMessages : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.error, fontSize: 10 },
         }}
+        listeners={{ focus: fetchUnreadCount }}
       />
       <Tab.Screen
         name="Profile"
