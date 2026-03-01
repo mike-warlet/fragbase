@@ -185,7 +185,7 @@ export async function triggerNotification(env, targetUserId, type, actorId, data
   try {
     // Get actor info
     const actor = await env.DB.prepare(
-      'SELECT display_name, username FROM users WHERE id = ?'
+      'SELECT COALESCE(display_name, name) as display_name, username FROM users WHERE id = ?'
     ).bind(actorId).first();
 
     if (!actor) return;

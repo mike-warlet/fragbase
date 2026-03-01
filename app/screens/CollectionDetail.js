@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Share,
+  RefreshControl,
 } from 'react-native';
 import { apiCall } from '../config';
 import { colors, typography, spacing, borderRadius } from '../theme';
@@ -16,6 +17,7 @@ import PerfumeCard from '../components/PerfumeCard';
 export default function CollectionDetail({ route, navigation }) {
   const { collectionId } = route.params || {};
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [collection, setCollection] = useState(null);
 
   useEffect(() => {
@@ -149,7 +151,14 @@ export default function CollectionDetail({ route, navigation }) {
       {/* Perfumes List */}
       <FlatList
         data={collection.perfumes || []}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => String(item.id)}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); fetchCollection().finally(() => setRefreshing(false)); }}
+            tintColor={colors.primary}
+          />
+        }
         renderItem={({ item }) => (
           <View style={styles.perfumeItem}>
             <PerfumeCard

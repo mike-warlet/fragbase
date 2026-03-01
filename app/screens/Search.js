@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { apiCall } from '../config';
 import PerfumeCard from '../components/PerfumeCard';
+import { SearchResultsSkeleton } from '../components/SkeletonLoader';
 import theme from '../theme';
 
 const SORT_OPTIONS = [
@@ -667,10 +668,7 @@ export default function SearchScreen({ navigation }) {
 
       {/* Results */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Buscando perfumes...</Text>
-        </View>
+        <SearchResultsSkeleton />
       ) : (
         <FlatList
           data={results}

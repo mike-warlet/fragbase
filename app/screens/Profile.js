@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { apiCall } from '../config';
 import { useAuth } from '../AuthContext';
@@ -17,6 +18,7 @@ export default function Profile({ navigation }) {
   const { logout, user: authUser } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState(null);
   const [levelInfo, setLevelInfo] = useState(null);
 
@@ -100,7 +102,19 @@ export default function Profile({ navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            setRefreshing(true);
+            Promise.all([fetchProfile(), fetchStats()]).finally(() => setRefreshing(false));
+          }}
+          tintColor={colors.primary}
+        />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         {user.avatar_url ? (

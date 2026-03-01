@@ -12,6 +12,7 @@ import ReviewCard from '../components/ReviewCard';
 import AddToCollectionModal from '../components/AddToCollectionModal';
 import LayeringSuggestions from '../components/LayeringSuggestions';
 import PyramidNotes from '../components/PyramidNotes';
+import { PerfumeDetailSkeleton } from '../components/SkeletonLoader';
 import theme from '../theme';
 
 export default function PerfumeDetailScreen({ route, navigation }) {
@@ -217,8 +218,8 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={styles.container}>
+        <PerfumeDetailSkeleton />
       </View>
     );
   }

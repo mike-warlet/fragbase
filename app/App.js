@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Text, ActivityIndicator, View, StatusBar } from 'react-native';
+import { Text, ActivityIndicator, View, StatusBar, TouchableOpacity } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -73,14 +73,20 @@ const screenOptions = {
 function MainTabs() {
   const { isLoggedIn } = useAuth();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isLoggedIn) return;
     try {
-      const data = await apiCall('/api/messages/conversations');
-      const convos = data.conversations || [];
-      const unread = convos.reduce((sum, c) => sum + (c.unread_count || 0), 0);
-      setUnreadMessages(unread);
+      const [msgData, notifData] = await Promise.all([
+        apiCall('/api/messages/conversations').catch(() => ({ conversations: [] })),
+        apiCall('/api/notifications?limit=20').catch(() => ({ notifications: [] })),
+      ]);
+      const convos = msgData.conversations || [];
+      setUnreadMessages(convos.reduce((sum, c) => sum + (c.unread_count || 0), 0));
+      const notifs = notifData.notifications || [];
+      const unreadN = notifs.filter(n => !n.is_read).length;
+      setUnreadNotifications(unreadN);
     } catch (e) {}
   }, [isLoggedIn]);
 
@@ -103,11 +109,35 @@ function MainTabs() {
       <Tab.Screen
         name="Feed"
         component={HomeScreen}
-        options={{
+        options={({ navigation }) => ({
           title: 'Feed',
           tabBarLabel: 'Feed',
           tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏠</Text>,
-        }}
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', gap: 12, marginRight: 16 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+                <Text style={{ fontSize: 22 }}>🔮</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+                <View>
+                  <Text style={{ fontSize: 22 }}>🔔</Text>
+                  {unreadNotifications > 0 && (
+                    <View style={{
+                      position: 'absolute', top: -4, right: -6,
+                      backgroundColor: colors.error, borderRadius: 8,
+                      minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>
+                        {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+          ),
+        })}
+        listeners={{ focus: fetchUnreadCount }}
       />
       <Tab.Screen
         name="Search"

@@ -10,6 +10,7 @@ import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 import SOTDBanner from '../components/SOTDBanner';
 import SmartPickCard from '../components/SmartPickCard';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { HomeFeedSkeleton } from '../components/SkeletonLoader';
 
 export default function HomeScreen({ navigation }) {
   const { logout } = useAuth();
@@ -263,8 +264,8 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.container}>
+        <HomeFeedSkeleton />
       </View>
     );
   }
