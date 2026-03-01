@@ -8,6 +8,7 @@ import { useAuth } from '../AuthContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 import SOTDBanner from '../components/SOTDBanner';
 import SmartPickCard from '../components/SmartPickCard';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function HomeScreen({ navigation }) {
   const { logout } = useAuth();
@@ -255,7 +256,7 @@ export default function HomeScreen({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={<><SmartPickCard navigation={navigation} /><SOTDBanner navigation={navigation} /></>}
+        ListHeaderComponent={<><ErrorBoundary><SmartPickCard navigation={navigation} /></ErrorBoundary><ErrorBoundary><SOTDBanner navigation={navigation} /></ErrorBoundary></>}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={

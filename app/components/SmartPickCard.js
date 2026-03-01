@@ -45,6 +45,8 @@ export default function SmartPickCard({ navigation }) {
   const pick = data.smart_pick;
   const weather = data.weather;
 
+  if (!weather) return null;
+
   const weatherEmoji = weather.temp >= 30 ? '☀️' : weather.temp >= 22 ? '🌤️' : weather.temp >= 14 ? '🍂' : '❄️';
 
   return (
@@ -62,10 +64,13 @@ export default function SmartPickCard({ navigation }) {
       </View>
 
       <View style={styles.content}>
-        <Image
-          source={{ uri: pick.image_url || 'https://via.placeholder.com/60' }}
-          style={styles.image}
-        />
+        {pick.image_url ? (
+          <Image source={{ uri: pick.image_url }} style={styles.image} />
+        ) : (
+          <View style={[styles.image, { backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center' }]}>
+            <Text style={{ fontSize: 24 }}>🌸</Text>
+          </View>
+        )}
         <View style={styles.info}>
           <Text style={styles.perfumeName} numberOfLines={1}>{pick.name}</Text>
           <Text style={styles.perfumeBrand}>{pick.brand}</Text>
