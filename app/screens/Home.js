@@ -4,14 +4,17 @@ import {
   TouchableOpacity, Image, TextInput, ActivityIndicator, Alert,
 } from 'react-native';
 import { apiCall } from '../config';
+import { useAuth } from '../AuthContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 import SOTDBanner from '../components/SOTDBanner';
 import SmartPickCard from '../components/SmartPickCard';
 
 export default function HomeScreen({ navigation }) {
+  const { logout } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -26,6 +29,7 @@ export default function HomeScreen({ navigation }) {
   const loadFeed = async (p = 1, reset = false) => {
     if (!reset && loadingMore) return;
     try {
+      setError(null);
       const data = await apiCall(`/api/posts?page=${p}&limit=15`);
       const newPosts = data.posts || [];
       if (reset) {
@@ -35,8 +39,15 @@ export default function HomeScreen({ navigation }) {
       }
       setHasMore(newPosts.length >= 15);
       setPage(p);
-    } catch (error) {
-      console.error('Error loading feed:', error);
+    } catch (err) {
+      console.error('Error loading feed:', err);
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        Alert.alert('Sessao expirada', 'Por favor faca login novamente.', [
+          { text: 'OK', onPress: logout },
+        ]);
+      } else if (reset) {
+        setError('Falha ao carregar o feed. Puxe para baixo para tentar novamente.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -254,10 +265,15 @@ export default function HomeScreen({ navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Nenhum post ainda</Text>
+            <Text style={styles.emptyTitle}>{error ? 'Erro' : 'Nenhum post ainda'}</Text>
             <Text style={styles.emptyText}>
-              Siga outros utilizadores para ver posts no seu feed
+              {error || 'Siga outros utilizadores para ver posts no seu feed'}
             </Text>
+            {error && (
+              <TouchableOpacity style={styles.retryButton} onPress={() => loadFeed(1, true)}>
+                <Text style={styles.retryText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
@@ -465,6 +481,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
+  },
+  retryText: {
+    color: colors.textPrimary,
+    fontWeight: typography.semibold,
   },
   fab: {
     position: 'absolute',
