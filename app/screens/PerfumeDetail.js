@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Share } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { api, apiCall } from '../config';
+import { apiCall } from '../config';
 import NoteVoting from '../components/NoteVoting';
 import AccordVoting from '../components/AccordVoting';
 import PerformanceVoting from '../components/PerformanceVoting';
@@ -11,6 +11,7 @@ import SimilarPerfumes from '../components/SimilarPerfumes';
 import ReviewCard from '../components/ReviewCard';
 import AddToCollectionModal from '../components/AddToCollectionModal';
 import LayeringSuggestions from '../components/LayeringSuggestions';
+import PyramidNotes from '../components/PyramidNotes';
 import theme from '../theme';
 
 export default function PerfumeDetailScreen({ route, navigation }) {
@@ -26,7 +27,6 @@ export default function PerfumeDetailScreen({ route, navigation }) {
   const [performanceVotes, setPerformanceVotes] = useState({ performance: null, user_vote: null });
   const [seasonVotes, setSeasonVotes] = useState({ seasons: null, user_vote: null });
   const [wishlistStatus, setWishlistStatus] = useState({ status: {}, counts: {} });
-  const [similarPerfumes, setSimilarPerfumes] = useState([]);
   const [statements, setStatements] = useState([]);
   const [noses, setNoses] = useState([]);
   const [userRecs, setUserRecs] = useState([]);
@@ -42,8 +42,8 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const loadPerfume = async () => {
     try {
-      const data = await api(`/api/perfumes/${perfumeId}`);
-      setPerfume(data.perfume);
+      const data = await apiCall(`/api/perfumes/${perfumeId}`);
+      setPerfume(data.perfume || null);
     } catch (error) {
       console.error('Error loading perfume:', error);
     } finally {
@@ -62,12 +62,11 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
   const loadVotingData = async () => {
     try {
-      const [notesData, accordsData, perfData, seasonData, similarData, wishlistData] = await Promise.allSettled([
+      const [notesData, accordsData, perfData, seasonData, wishlistData] = await Promise.allSettled([
         apiCall(`/api/perfumes/${perfumeId}/notes/votes`),
         apiCall(`/api/perfumes/${perfumeId}/accords/votes`),
         apiCall(`/api/perfumes/${perfumeId}/performance/votes`),
         apiCall(`/api/perfumes/${perfumeId}/season/votes`),
-        api(`/api/perfumes/${perfumeId}/similar`),
         apiCall(`/api/perfumes/${perfumeId}/wishlist-status`).catch(() => ({ status: {}, counts: {} })),
       ]);
 
@@ -75,7 +74,6 @@ export default function PerfumeDetailScreen({ route, navigation }) {
       if (accordsData.status === 'fulfilled') setAccordVotes(accordsData.value);
       if (perfData.status === 'fulfilled') setPerformanceVotes(perfData.value);
       if (seasonData.status === 'fulfilled') setSeasonVotes(seasonData.value);
-      if (similarData.status === 'fulfilled') setSimilarPerfumes(similarData.value.similar || []);
       if (wishlistData.status === 'fulfilled') setWishlistStatus(wishlistData.value);
     } catch (error) {
       console.error('Error loading voting data:', error);
@@ -83,14 +81,18 @@ export default function PerfumeDetailScreen({ route, navigation }) {
   };
 
   const loadNewFeatures = async () => {
-    const [stmts, nosesData, recsData] = await Promise.allSettled([
-      api(`/api/perfumes/${perfumeId}/statements`),
-      api(`/api/perfumes/${perfumeId}/noses`),
-      api(`/api/perfumes/${perfumeId}/recommendations`),
-    ]);
-    if (stmts.status === 'fulfilled') setStatements(stmts.value.statements || []);
-    if (nosesData.status === 'fulfilled') setNoses(nosesData.value.perfumers || []);
-    if (recsData.status === 'fulfilled') setUserRecs(recsData.value.recommendations || []);
+    try {
+      const [stmts, nosesData, recsData] = await Promise.allSettled([
+        apiCall(`/api/perfumes/${perfumeId}/statements`),
+        apiCall(`/api/perfumes/${perfumeId}/noses`),
+        apiCall(`/api/perfumes/${perfumeId}/recommendations`),
+      ]);
+      if (stmts.status === 'fulfilled') setStatements(stmts.value?.statements || []);
+      if (nosesData.status === 'fulfilled') setNoses(nosesData.value?.perfumers || []);
+      if (recsData.status === 'fulfilled') setUserRecs(recsData.value?.recommendations || []);
+    } catch (error) {
+      console.error('Error loading new features:', error);
+    }
   };
 
   const submitStatement = async () => {
@@ -185,6 +187,18 @@ export default function PerfumeDetailScreen({ route, navigation }) {
     }
   }, [perfumeId, wishlistStatus]);
 
+  const handleSharePerfume = async () => {
+    try {
+      const year = perfume.year ? ` (${perfume.year})` : '';
+      const rating = perfume.avg_rating ? `\nRating: ${Number(perfume.avg_rating).toFixed(1)}/5` : '';
+      await Share.share({
+        message: `${perfume.name} by ${perfume.brand}${year}${rating}\n\nDescobre no Fragbase!`,
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+    }
+  };
+
   const handleCreateReview = () => {
     navigation.navigate('CreateReview', { perfumeId, perfumeName: perfume.name });
   };
@@ -207,18 +221,28 @@ export default function PerfumeDetailScreen({ route, navigation }) {
     );
   }
 
+  // Parse notes safely (may be string, object, or null)
+  const parsedNotes = (() => {
+    if (!perfume.notes) return { top: [], heart: [], base: [] };
+    if (typeof perfume.notes === 'string') {
+      try { return JSON.parse(perfume.notes); } catch { return { top: [], heart: [], base: [] }; }
+    }
+    return perfume.notes;
+  })();
+
   // Merge notes from perfume data with community votes
+  const voteNotes = noteVotes?.notes || { top: [], heart: [], base: [] };
   const mergedNotes = {
-    top: (perfume.notes?.top || []).map(name => {
-      const vote = noteVotes.notes.top?.find(v => v.name === name);
+    top: (Array.isArray(parsedNotes.top) ? parsedNotes.top : []).map(name => {
+      const vote = (voteNotes.top || []).find(v => v.name === name);
       return vote || { name, avg_intensity: 0, vote_count: 0 };
     }),
-    heart: (perfume.notes?.heart || []).map(name => {
-      const vote = noteVotes.notes.heart?.find(v => v.name === name);
+    heart: (Array.isArray(parsedNotes.heart) ? parsedNotes.heart : []).map(name => {
+      const vote = (voteNotes.heart || []).find(v => v.name === name);
       return vote || { name, avg_intensity: 0, vote_count: 0 };
     }),
-    base: (perfume.notes?.base || []).map(name => {
-      const vote = noteVotes.notes.base?.find(v => v.name === name);
+    base: (Array.isArray(parsedNotes.base) ? parsedNotes.base : []).map(name => {
+      const vote = (voteNotes.base || []).find(v => v.name === name);
       return vote || { name, avg_intensity: 0, vote_count: 0 };
     }),
   };
@@ -238,8 +262,8 @@ export default function PerfumeDetailScreen({ route, navigation }) {
           colors={['transparent', theme.colors.background]}
           style={styles.heroGradient}
         />
-        {perfume.gender && (
-          <View style={[styles.genderBadge, { backgroundColor: theme.getGenderColor(perfume.gender) }]}>
+        {perfume.gender && theme.getGenderColor && (
+          <View style={[styles.genderBadge, { backgroundColor: theme.getGenderColor(perfume.gender) || theme.colors.primary }]}>
             <Text style={styles.genderText}>
               {perfume.gender === 'masculine' ? 'FOR MEN' :
                perfume.gender === 'feminine' ? 'FOR WOMEN' : 'UNISEX'}
@@ -259,6 +283,9 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         {perfume.perfumer && (
           <Text style={styles.perfumer}>Por {perfume.perfumer}</Text>
         )}
+        <TouchableOpacity style={styles.shareButton} onPress={handleSharePerfume}>
+          <Text style={styles.shareButtonText}>Partilhar</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 3. Community Rating */}
@@ -280,8 +307,8 @@ export default function PerfumeDetailScreen({ route, navigation }) {
 
       {/* 4. Wishlist Buttons */}
       <WishlistButtons
-        status={wishlistStatus.status}
-        counts={wishlistStatus.counts}
+        status={wishlistStatus?.status || {}}
+        counts={wishlistStatus?.counts || {}}
         onToggle={handleWishlistToggle}
       />
 
@@ -299,7 +326,15 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         onVote={handlePerformanceVote}
       />
 
-      {/* 7. Olfactory Pyramid (interactive) */}
+      {/* 7a. Visual Pyramid - tappable notes with ingredient info */}
+      {(parsedNotes.top?.length > 0 || parsedNotes.heart?.length > 0 || parsedNotes.base?.length > 0) && (
+        <PyramidNotes
+          notes={{ top: parsedNotes.top, middle: parsedNotes.heart, base: parsedNotes.base }}
+          navigation={navigation}
+        />
+      )}
+
+      {/* 7b. Olfactory Pyramid (interactive voting) */}
       {(mergedNotes.top.length > 0 || mergedNotes.heart.length > 0 || mergedNotes.base.length > 0) && (
         <NoteVoting
           notes={mergedNotes}
@@ -330,9 +365,9 @@ export default function PerfumeDetailScreen({ route, navigation }) {
         navigation={navigation}
       />
 
-      {/* 11. Similar Perfumes */}
+      {/* 11. Similar Perfumes (with dupe/upgrade tabs) */}
       <SimilarPerfumes
-        perfumes={similarPerfumes}
+        perfumeId={perfumeId}
         onPress={(id) => navigation.push('PerfumeDetail', { perfumeId: id })}
       />
 
@@ -574,6 +609,19 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.body,
     color: theme.colors.textSecondary,
     fontStyle: 'italic',
+  },
+  shareButton: {
+    alignSelf: 'flex-start',
+    marginTop: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs + 2,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.round,
+  },
+  shareButtonText: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.semibold,
   },
 
   // Rating
