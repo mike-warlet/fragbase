@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api, apiCall } from './config';
+import { api, apiCall, clearAllCache, setOnAuthError } from './config';
 
 const AuthContext = createContext(null);
 
@@ -19,6 +19,13 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     restoreSession();
+  }, []);
+
+  // Register global 401 handler so any API call triggers auto-logout
+  useEffect(() => {
+    setOnAuthError(() => {
+      logout();
+    });
   }, []);
 
   const restoreSession = async () => {
@@ -76,6 +83,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
+    clearAllCache();
     setToken(null);
     setUser(null);
   };

@@ -46,6 +46,16 @@ export function invalidateCache(pattern) {
   }
 }
 
+export function clearAllCache() {
+  cache.clear();
+}
+
+// Global 401 handler — set by AuthContext to trigger auto-logout
+let _onAuthError = null;
+export function setOnAuthError(handler) {
+  _onAuthError = handler;
+}
+
 // Basic API call (no auth header)
 export async function api(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
@@ -69,11 +79,25 @@ export async function api(endpoint, options = {}) {
   };
 
   const response = await fetch(url, config);
-  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'API request failed');
+    if (response.status === 401 && _onAuthError) {
+      _onAuthError();
+    }
+    let errorMsg = 'API request failed';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.error || errorMsg;
+    } catch {
+      // Response wasn't JSON (e.g., HTML error page from CDN)
+      errorMsg = `HTTP ${response.status}: ${response.statusText || 'Request failed'}`;
+    }
+    const error = new Error(errorMsg);
+    error.status = response.status;
+    throw error;
   }
+
+  const data = await response.json();
 
   // Cache GET responses with configured TTL
   if (method === 'GET') {
