@@ -119,6 +119,13 @@ export async function handleGetPerfume(request, env, perfumeId) {
 // Get trending perfumes (by recent engagement)
 export async function handleGetTrendingPerfumes(request, env) {
   try {
+    const url = new URL(request.url);
+    const period = url.searchParams.get('period') || 'week'; // week, month, all
+    const limitParam = Math.min(parseInt(url.searchParams.get('limit') || '20'), 50);
+
+    const periodMap = { week: '-7 days', month: '-30 days', all: '-3650 days' };
+    const timeWindow = periodMap[period] || periodMap.week;
+
     const { results } = await env.DB.prepare(
       `SELECT p.id, p.name, p.brand, p.year, p.image_url, p.gender,
               COUNT(DISTINCT r.id) as recent_reviews,
@@ -126,13 +133,13 @@ export async function handleGetTrendingPerfumes(request, env) {
               COUNT(DISTINCT nv.id) as recent_votes,
               (COUNT(DISTINCT r.id) * 3 + COUNT(DISTINCT w.id) * 2 + COUNT(DISTINCT nv.id)) as score
        FROM perfumes p
-       LEFT JOIN reviews r ON p.id = r.perfume_id AND r.created_at > datetime('now', '-7 days')
-       LEFT JOIN wishlists w ON p.id = w.perfume_id AND w.created_at > datetime('now', '-7 days')
-       LEFT JOIN note_votes nv ON p.id = nv.perfume_id AND nv.created_at > datetime('now', '-7 days')
+       LEFT JOIN reviews r ON p.id = r.perfume_id AND r.created_at > datetime('now', ?)
+       LEFT JOIN wishlists w ON p.id = w.perfume_id AND w.created_at > datetime('now', ?)
+       LEFT JOIN note_votes nv ON p.id = nv.perfume_id AND nv.created_at > datetime('now', ?)
        GROUP BY p.id
        ORDER BY score DESC, p.name ASC
-       LIMIT 20`
-    ).all();
+       LIMIT ?`
+    ).bind(timeWindow, timeWindow, timeWindow, limitParam).all();
 
     return new Response(JSON.stringify({ perfumes: results }), {
       headers: { 'Content-Type': 'application/json' }

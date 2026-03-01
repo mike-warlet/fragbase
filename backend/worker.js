@@ -615,9 +615,8 @@ export default {
       
     } catch (error) {
       console.error('Worker error:', error);
-      const errorResponse = new Response(JSON.stringify({ 
-        error: 'Internal server error',
-        message: error.message 
+      const errorResponse = new Response(JSON.stringify({
+        error: 'Internal server error'
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }

@@ -24,11 +24,12 @@ export default function HomeScreen({ navigation }) {
   const [comments, setComments] = useState({});
   const [commentText, setCommentText] = useState({});
   const [showWelcome, setShowWelcome] = useState(false);
+  const [feedFilter, setFeedFilter] = useState('all'); // all, sotd, general
 
   useEffect(() => {
     loadFeed(1, true);
     checkNewUser();
-  }, []);
+  }, [feedFilter]);
 
   const checkNewUser = async () => {
     try {
@@ -46,7 +47,8 @@ export default function HomeScreen({ navigation }) {
     if (!reset && loadingMore) return;
     try {
       setError(null);
-      const data = await apiCall(`/api/posts?page=${p}&limit=15`);
+      const typeParam = feedFilter !== 'all' ? `&type=${feedFilter}` : '';
+      const data = await apiCall(`/api/posts?page=${p}&limit=15${typeParam}`);
       const newPosts = data.posts || [];
       if (reset) {
         setPosts(newPosts);
@@ -271,7 +273,20 @@ export default function HomeScreen({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={<>{showWelcome && (
+        ListHeaderComponent={<>
+          {/* Feed filter tabs */}
+          <View style={styles.feedFilters}>
+            {[{ key: 'all', label: 'Todos' }, { key: 'sotd', label: 'SOTD' }, { key: 'general', label: 'Posts' }].map(f => (
+              <TouchableOpacity
+                key={f.key}
+                style={[styles.feedFilterTab, feedFilter === f.key && styles.feedFilterActive]}
+                onPress={() => { if (feedFilter !== f.key) { setFeedFilter(f.key); setLoading(true); } }}
+              >
+                <Text style={[styles.feedFilterText, feedFilter === f.key && styles.feedFilterTextActive]}>{f.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {showWelcome && (
           <View style={styles.welcomeCard}>
             <Text style={styles.welcomeTitle}>Bem-vindo ao FragBase!</Text>
             <Text style={styles.welcomeText}>Descobre o teu perfil olfativo com o nosso quiz e recebe recomendacoes personalizadas.</Text>
@@ -559,6 +574,28 @@ const styles = StyleSheet.create({
   welcomeDismiss: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: typography.body,
+  },
+  feedFilters: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  feedFilterTab: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.round,
+    backgroundColor: colors.surface,
+  },
+  feedFilterActive: {
+    backgroundColor: colors.primary,
+  },
+  feedFilterText: {
+    color: colors.textSecondary,
+    fontSize: typography.caption,
+  },
+  feedFilterTextActive: {
+    color: '#fff',
+    fontWeight: typography.semibold,
   },
   fab: {
     position: 'absolute',

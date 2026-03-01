@@ -16,8 +16,21 @@ export async function handleGetFeed(request, env) {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
     const offset = (page - 1) * limit;
-    
+    const typeFilter = url.searchParams.get('type'); // 'sotd', 'general', or null for all
+
     // Get posts from followed users + own posts, with like/comment counts
+    let whereClause = `(p.user_id = ? OR p.user_id IN (
+         SELECT followed_id FROM follows WHERE follower_id = ?
+       ))`;
+    const params = [auth.userId, auth.userId, auth.userId];
+
+    if (typeFilter && ['sotd', 'general'].includes(typeFilter)) {
+      whereClause += ` AND p.type = ?`;
+      params.push(typeFilter);
+    }
+
+    params.push(limit, offset);
+
     const { results } = await env.DB.prepare(
       `SELECT p.*, u.name as user_name, u.photo_url as user_photo,
               pf.name as perfume_name, pf.brand as perfume_brand, pf.image_url as perfume_image,
@@ -27,12 +40,10 @@ export async function handleGetFeed(request, env) {
        FROM posts p
        JOIN users u ON p.user_id = u.id
        LEFT JOIN perfumes pf ON p.perfume_id = pf.id
-       WHERE p.user_id = ? OR p.user_id IN (
-         SELECT followed_id FROM follows WHERE follower_id = ?
-       )
+       WHERE ${whereClause}
        ORDER BY p.created_at DESC
        LIMIT ? OFFSET ?`
-    ).bind(auth.userId, auth.userId, auth.userId, limit, offset).all();
+    ).bind(...params).all();
 
     const posts = results.map(p => ({ ...p, is_liked: p.is_liked > 0 }));
 

@@ -18,6 +18,8 @@ const CARD_WIDTH = 140;
 
 export default function ExploreScreen({ navigation }) {
   const [sections, setSections] = useState([]);
+  const [trending, setTrending] = useState([]);
+  const [trendingPeriod, setTrendingPeriod] = useState('week');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -30,15 +32,20 @@ export default function ExploreScreen({ navigation }) {
   const loadData = async () => {
     setError(null);
     try {
-      const [exploreData, profileData] = await Promise.allSettled([
+      const [exploreData, profileData, trendingData] = await Promise.allSettled([
         apiCall('/api/discovery/explore'),
         apiCall('/api/discovery/profile'),
+        apiCall(`/api/perfumes/trending?period=${trendingPeriod}&limit=10`),
       ]);
 
       if (exploreData.status === 'fulfilled') {
         setSections(exploreData.value.sections || []);
       } else {
         setError('Failed to load explore data');
+      }
+
+      if (trendingData.status === 'fulfilled') {
+        setTrending(trendingData.value.perfumes || []);
       }
 
       if (profileData.status === 'fulfilled') {
@@ -60,6 +67,14 @@ export default function ExploreScreen({ navigation }) {
     setRefreshing(true);
     loadData();
   }, []);
+
+  const changeTrendingPeriod = async (period) => {
+    setTrendingPeriod(period);
+    try {
+      const data = await apiCall(`/api/perfumes/trending?period=${period}&limit=10`);
+      setTrending(data.perfumes || []);
+    } catch (e) {}
+  };
 
   const renderPerfumeCard = (perfume) => (
     <TouchableOpacity
@@ -179,6 +194,50 @@ export default function ExploreScreen({ navigation }) {
         </View>
       </TouchableOpacity>
 
+      {/* Taste Profile banner */}
+      <TouchableOpacity
+        style={styles.tasteBanner}
+        onPress={() => navigation.navigate('TasteProfile')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.compassBannerContent}>
+          <Text style={styles.compassBannerIcon}>{'~'}</Text>
+          <View style={styles.compassBannerText}>
+            <Text style={styles.compassBannerTitle}>Perfil Olfativo</Text>
+            <Text style={styles.compassBannerSubtitle}>
+              Analisa as tuas preferencias e descobre o teu estilo
+            </Text>
+          </View>
+          <Text style={styles.compassBannerArrow}>{'>'}</Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Trending section */}
+      {trending.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionTitle}>Em Alta</Text>
+              <Text style={styles.sectionSubtitle}>Perfumes mais populares</Text>
+            </View>
+          </View>
+          <View style={styles.trendingPeriods}>
+            {[{ key: 'week', label: 'Semana' }, { key: 'month', label: 'Mes' }, { key: 'all', label: 'Sempre' }].map(p => (
+              <TouchableOpacity
+                key={p.key}
+                style={[styles.periodTab, trendingPeriod === p.key && styles.periodTabActive]}
+                onPress={() => changeTrendingPeriod(p.key)}
+              >
+                <Text style={[styles.periodText, trendingPeriod === p.key && styles.periodTextActive]}>{p.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
+            {trending.map(renderPerfumeCard)}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Sections */}
       {sections.map(renderSection)}
 
@@ -251,6 +310,16 @@ const styles = StyleSheet.create({
   },
 
   // Compass banner
+  tasteBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.info,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
   compassBanner: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
@@ -296,6 +365,29 @@ const styles = StyleSheet.create({
   // Sections
   section: {
     marginBottom: spacing.lg,
+  },
+  trendingPeriods: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  periodTab: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.round,
+    backgroundColor: colors.surface,
+  },
+  periodTabActive: {
+    backgroundColor: colors.primary,
+  },
+  periodText: {
+    color: colors.textSecondary,
+    fontSize: typography.caption,
+  },
+  periodTextActive: {
+    color: '#fff',
+    fontWeight: typography.semibold,
   },
   sectionHeader: {
     paddingHorizontal: spacing.lg,

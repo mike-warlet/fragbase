@@ -17,6 +17,8 @@ export default function ChatScreen({ route, navigation }) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
   const flatListRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   const lastTypingSentRef = useRef(0);
