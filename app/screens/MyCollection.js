@@ -23,12 +23,16 @@ export default function MyCollection({ navigation }) {
     fetchCollection();
   }, []);
 
+  const [error, setError] = useState(null);
+
   const fetchCollection = async () => {
     try {
+      setError(null);
       const data = await apiCall('/api/wishlists/me?type=own');
       setPerfumes(data.wishlists || data || []);
-    } catch (error) {
-      console.error('Failed to load collection:', error);
+    } catch (err) {
+      console.error('Failed to load collection:', err);
+      setError('Falha ao carregar colecao. Puxe para baixo para tentar novamente.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -150,16 +154,18 @@ export default function MyCollection({ navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>📦</Text>
-            <Text style={styles.emptyText}>A sua coleção está vazia</Text>
-            <Text style={styles.emptySubtext}>
-              Adicione perfumes a partir da página de detalhes
-            </Text>
+            <Text style={styles.emptyEmoji}>{error ? '⚠️' : '📦'}</Text>
+            <Text style={styles.emptyText}>{error || 'A sua coleção está vazia'}</Text>
+            {!error && (
+              <Text style={styles.emptySubtext}>
+                Adicione perfumes a partir da página de detalhes
+              </Text>
+            )}
             <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() => navigation.navigate('Search')}
+              onPress={error ? fetchCollection : () => navigation.navigate('Search')}
             >
-              <Text style={styles.emptyButtonText}>Explorar Perfumes</Text>
+              <Text style={styles.emptyButtonText}>{error ? 'Tentar novamente' : 'Explorar Perfumes'}</Text>
             </TouchableOpacity>
           </View>
         }

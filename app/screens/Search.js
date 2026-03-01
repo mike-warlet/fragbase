@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator,
-  TouchableOpacity, ScrollView, Animated, Modal, Dimensions,
+  TouchableOpacity, ScrollView, Animated, Modal, Dimensions, Alert,
 } from 'react-native';
 import { apiCall } from '../config';
 import PerfumeCard from '../components/PerfumeCard';
@@ -106,7 +106,7 @@ export default function SearchScreen({ navigation }) {
       const data = await apiCall('/api/filters/options');
       setFilterOptions(data);
     } catch (error) {
-      console.error('Load filter options error:', error);
+      // Filter options are non-critical, fail silently
     } finally {
       setLoadingOptions(false);
     }
@@ -119,7 +119,7 @@ export default function SearchScreen({ navigation }) {
       setResults(data.perfumes || []);
       setInitialLoad(false);
     } catch (error) {
-      console.error('Load perfumes error:', error);
+      Alert.alert('Erro', 'Falha ao carregar perfumes. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ export default function SearchScreen({ navigation }) {
       const data = await apiCall(`/api/search?${params.toString()}`);
       setResults(data.perfumes || []);
     } catch (error) {
-      console.error('Search error:', error);
+      Alert.alert('Erro', 'Falha na busca. Tente novamente.');
     } finally {
       setLoading(false);
     }

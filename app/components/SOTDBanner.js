@@ -31,7 +31,7 @@ export default function SOTDBanner({ navigation }) {
     return (
       <TouchableOpacity
         style={styles.promptCard}
-        onPress={() => navigation.getParent()?.navigate('SOTDPicker')}
+        onPress={() => navigation.navigate('SOTDPicker')}
         activeOpacity={0.8}
       >
         <Text style={styles.promptEmoji}>{'\uD83D\uDC43'}</Text>
@@ -48,7 +48,7 @@ export default function SOTDBanner({ navigation }) {
   return (
     <TouchableOpacity
       style={styles.sotdCard}
-      onPress={() => navigation.getParent()?.navigate('PerfumeDetail', { perfumeId: sotd.perfume_id })}
+      onPress={() => navigation.navigate('PerfumeDetail', { perfumeId: sotd.perfume_id })}
       activeOpacity={0.8}
     >
       <View style={styles.sotdBadge}>
