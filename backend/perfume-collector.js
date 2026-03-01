@@ -12,7 +12,7 @@ export const perfumesDatabase = [
     brand: "Amouage",
     year: 2020,
     gender: "masculine",
-    image_url: "https://fimgs.net/mdimg/perfume/375x500.67784.jpg",
+    image_url: "https://fimgs.net/mdimg/perfume/375x500.64419.jpg",
     perfumer: "Pierre Negrin",
     description: "Interlude 53 Extrait pays homage to Interlude Man, reimagining it as an extrait de parfum of unrivalled intensity. Resolutely bold, its opening accord of spicy oregano and balsamic labdanum creates a powerful smoky prelude to a complex heart of incense and opoponax.",
     concentration: "Extrait de Parfum",
