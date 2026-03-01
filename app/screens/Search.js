@@ -27,6 +27,15 @@ const RATING_OPTIONS = [
   { key: 4, label: '4+' },
 ];
 
+const QUICK_CATEGORIES = [
+  { key: 'fresh', label: 'Frescos', icon: '\uD83C\uDF0A', accords: ['fresh', 'citrus', 'aquatic'] },
+  { key: 'floral', label: 'Florais', icon: '\uD83C\uDF38', accords: ['floral', 'powdery'] },
+  { key: 'woody', label: 'Amadeirados', icon: '\uD83C\uDF32', accords: ['woody', 'earthy'] },
+  { key: 'oriental', label: 'Orientais', icon: '\u2728', accords: ['amber', 'warm spicy', 'sweet'] },
+  { key: 'gourmand', label: 'Gourmand', icon: '\uD83C\uDF6B', accords: ['sweet', 'vanilla', 'honey'] },
+  { key: 'leather', label: 'Couro', icon: '\uD83E\uDDF4', accords: ['leather', 'smoky', 'animalic'] },
+];
+
 export default function SearchScreen({ navigation }) {
   // Search state
   const [query, setQuery] = useState('');
@@ -50,6 +59,9 @@ export default function SearchScreen({ navigation }) {
 
   // Brand search within filter panel
   const [brandSearch, setBrandSearch] = useState('');
+
+  // Quick category
+  const [activeCategory, setActiveCategory] = useState(null);
 
   // Sort dropdown
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -207,7 +219,18 @@ export default function SearchScreen({ navigation }) {
     }
   };
 
+  const selectCategory = (cat) => {
+    if (activeCategory === cat.key) {
+      setActiveCategory(null);
+      setSelectedAccords([]);
+    } else {
+      setActiveCategory(cat.key);
+      setSelectedAccords(cat.accords);
+    }
+  };
+
   const toggleAccord = (accordName) => {
+    setActiveCategory(null); // clear quick category when manually toggling
     setSelectedAccords(prev => {
       if (prev.includes(accordName)) {
         return prev.filter(a => a !== accordName);
@@ -544,6 +567,32 @@ export default function SearchScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Quick Category Chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.quickCategoryScroll}
+        style={styles.quickCategoryRow}
+      >
+        {QUICK_CATEGORIES.map(cat => (
+          <TouchableOpacity
+            key={cat.key}
+            style={[
+              styles.quickCategoryChip,
+              activeCategory === cat.key && styles.quickCategoryActive,
+            ]}
+            onPress={() => selectCategory(cat)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.quickCategoryIcon}>{cat.icon}</Text>
+            <Text style={[
+              styles.quickCategoryText,
+              activeCategory === cat.key && styles.quickCategoryTextActive,
+            ]}>{cat.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       {/* Active Filter Chips */}
       {renderActiveFilters()}
 
@@ -676,6 +725,45 @@ const styles = StyleSheet.create({
   filterBadgeText: {
     color: '#fff',
     fontSize: theme.typography.small,
+    fontWeight: theme.typography.bold,
+  },
+
+  // Quick categories
+  quickCategoryRow: {
+    maxHeight: 44,
+    marginBottom: theme.spacing.sm,
+  },
+  quickCategoryScroll: {
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickCategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs + 2,
+    borderRadius: theme.borderRadius.round,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 4,
+  },
+  quickCategoryActive: {
+    backgroundColor: theme.colors.primary + '40',
+    borderColor: theme.colors.primary,
+  },
+  quickCategoryIcon: {
+    fontSize: 14,
+  },
+  quickCategoryText: {
+    fontSize: theme.typography.caption,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.medium,
+  },
+  quickCategoryTextActive: {
+    color: theme.colors.textPrimary,
     fontWeight: theme.typography.bold,
   },
 

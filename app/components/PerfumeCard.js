@@ -4,83 +4,97 @@ import theme from '../theme';
 
 function PerfumeCard({ perfume, onPress }) {
   const [imageError, setImageError] = React.useState(false);
-  
-  const renderAccordTags = () => {
-    if (!perfume.main_accords || perfume.main_accords.length === 0) return null;
-    
-    // Show top 3 accords
-    const topAccords = perfume.main_accords.slice(0, 3);
-    
-    return (
-      <View style={styles.accordsContainer}>
-        {topAccords.map((accord, index) => (
-          <View 
-            key={index}
-            style={[
-              styles.accordTag,
-              { backgroundColor: theme.getAccordColor(accord.name) + '40' } // 40 = 25% opacity
-            ]}
-          >
-            <Text style={styles.accordText}>{accord.name}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
-  
-  const renderRating = () => {
-    if (!perfume.avg_rating && !perfume.rating) return null;
-    
-    const rating = perfume.avg_rating || perfume.rating || 0;
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    return (
-      <View style={styles.ratingContainer}>
-        <Text style={styles.ratingStars}>
-          {'⭐'.repeat(fullStars)}{hasHalfStar ? '½' : ''}
-        </Text>
-        <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-      </View>
-    );
-  };
-  
+
+  const rating = perfume.avg_rating || perfume.rating || 0;
+  const topAccords = (perfume.main_accords || []).slice(0, 3);
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+      {/* Image area - taller 3:4 ratio */}
       <View style={styles.imageContainer}>
         {perfume.image_url && !imageError ? (
-          <Image 
-            source={{ uri: perfume.image_url }} 
+          <Image
+            source={{ uri: perfume.image_url }}
             style={styles.image}
             onError={() => setImageError(true)}
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderEmoji}>🌸</Text>
-            <Text style={styles.placeholderBrand}>{perfume.brand}</Text>
+            <Text style={styles.placeholderEmoji}>
+              {perfume.gender === 'feminine' ? '\uD83C\uDF38' :
+               perfume.gender === 'masculine' ? '\uD83E\uDDF4' : '\u2728'}
+            </Text>
+            <Text style={styles.placeholderBrand} numberOfLines={1}>{perfume.brand}</Text>
           </View>
         )}
+
+        {/* Gradient overlay at bottom of image */}
+        <View style={styles.imageOverlay} />
+
+        {/* Gender badge */}
         {perfume.gender && (
-          <View style={[styles.genderBadge, { 
-            backgroundColor: theme.getGenderColor(perfume.gender) 
+          <View style={[styles.genderBadge, {
+            backgroundColor: (theme.getGenderColor && theme.getGenderColor(perfume.gender)) || theme.colors.primary
           }]}>
             <Text style={styles.genderText}>
               {perfume.gender === 'masculine' ? 'M' : perfume.gender === 'feminine' ? 'F' : 'U'}
             </Text>
           </View>
         )}
-      </View>
-      
-      <View style={styles.content}>
-        <Text style={styles.brand}>{perfume.brand}</Text>
-        <Text style={styles.name} numberOfLines={2}>{perfume.name}</Text>
-        
-        {perfume.year && (
-          <Text style={styles.year}>{perfume.year}</Text>
+
+        {/* Rating badge on image */}
+        {rating > 0 && (
+          <View style={styles.ratingBadge}>
+            <Text style={styles.ratingIcon}>{'\u2605'}</Text>
+            <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+          </View>
         )}
-        
-        {renderRating()}
-        {renderAccordTags()}
+
+        {/* Type/concentration badge */}
+        {perfume.type && perfume.type !== 'Eau de Toilette' && (
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeText}>
+              {perfume.type === 'Eau de Parfum' ? 'EDP' :
+               perfume.type === 'Parfum' ? 'P' :
+               perfume.type === 'Extrait de Parfum' ? 'Extrait' :
+               perfume.type === 'Eau de Cologne' ? 'EDC' : ''}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Content area */}
+      <View style={styles.content}>
+        <Text style={styles.brand} numberOfLines={1}>{perfume.brand}</Text>
+        <Text style={styles.name} numberOfLines={2}>{perfume.name}</Text>
+
+        {perfume.year ? (
+          <Text style={styles.year}>{perfume.year}</Text>
+        ) : null}
+
+        {/* Accord chips */}
+        {topAccords.length > 0 && (
+          <View style={styles.accordsContainer}>
+            {topAccords.map((accord, index) => {
+              const color = theme.getAccordColor(accord.name);
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.accordTag,
+                    {
+                      backgroundColor: color + '20',
+                      borderColor: color + '60',
+                    }
+                  ]}
+                >
+                  <View style={[styles.accordDot, { backgroundColor: color }]} />
+                  <Text style={[styles.accordText, { color: color }]}>{accord.name}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -100,7 +114,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    aspectRatio: 1,
+    aspectRatio: 0.75, // 3:4 ratio - taller for perfume bottles
     backgroundColor: theme.colors.surfaceLight,
   },
   image: {
@@ -116,79 +130,121 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceLight,
   },
   placeholderEmoji: {
-    fontSize: 64,
-    marginBottom: theme.spacing.sm,
+    fontSize: 52,
+    marginBottom: theme.spacing.xs,
   },
   placeholderBrand: {
-    fontSize: theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: theme.typography.caption,
+    color: theme.colors.textTertiary,
     textAlign: 'center',
+    paddingHorizontal: theme.spacing.sm,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    backgroundColor: 'transparent',
+    // Subtle gradient effect via border
+    borderBottomWidth: 0,
   },
   genderBadge: {
     position: 'absolute',
     top: theme.spacing.sm,
     right: theme.spacing.sm,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    ...theme.shadows.sm,
   },
   genderText: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.caption,
+    color: '#fff',
+    fontSize: theme.typography.small,
     fontWeight: theme.typography.bold,
   },
+  ratingBadge: {
+    position: 'absolute',
+    bottom: theme.spacing.sm,
+    left: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+    gap: 2,
+  },
+  ratingIcon: {
+    fontSize: 10,
+    color: '#ffd700',
+  },
+  ratingValue: {
+    fontSize: theme.typography.small,
+    color: '#fff',
+    fontWeight: theme.typography.bold,
+  },
+  typeBadge: {
+    position: 'absolute',
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  typeText: {
+    fontSize: theme.typography.small,
+    color: '#fff',
+    fontWeight: theme.typography.semibold,
+  },
   content: {
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
   },
   brand: {
-    fontSize: theme.typography.caption,
+    fontSize: theme.typography.small,
     color: theme.colors.primary,
     fontWeight: theme.typography.semibold,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   name: {
-    fontSize: theme.typography.h6,
+    fontSize: theme.typography.body,
     fontWeight: theme.typography.bold,
     color: theme.colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 2,
+    lineHeight: 18,
   },
   year: {
-    fontSize: theme.typography.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  ratingStars: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  ratingText: {
-    fontSize: theme.typography.body,
-    color: theme.colors.textPrimary,
-    fontWeight: theme.typography.medium,
+    fontSize: theme.typography.small,
+    color: theme.colors.textTertiary,
+    marginBottom: theme.spacing.xs,
   },
   accordsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.xs,
+    gap: 4,
+    marginTop: theme.spacing.xs,
   },
   accordTag: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: theme.borderRadius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.round,
+    borderWidth: 1,
+    gap: 3,
+  },
+  accordDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
   },
   accordText: {
-    fontSize: theme.typography.small,
-    color: theme.colors.textPrimary,
-    fontWeight: theme.typography.medium,
+    fontSize: 9,
+    fontWeight: theme.typography.semibold,
     textTransform: 'capitalize',
   },
 });
